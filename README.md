@@ -5,14 +5,20 @@
 
 This Neovim plugin provides an asynchronous interface to run project-wide TypeScript type-checking using the TypeScript compiler (`tsc`). It displays the type-checking results in a quickfix list and provides visual notifications about the progress and completion of type-checking.
 
-
+## Examples
+### Running with no errors
 https://user-images.githubusercontent.com/2755722/233818163-bd2c2dda-88fc-41ea-a4bc-40972ad3ce9e.mov
 
 
 
-
+### Running with errors
 https://user-images.githubusercontent.com/2755722/233818168-de95bc9a-c406-4c71-9ef9-021f80db1da9.mov
 
+
+### Running without nvim_notify installed
+
+
+https://user-images.githubusercontent.com/2755722/233843746-ee116863-bef5-4e26-ba0a-afb906a2f111.mov
 
 
 
