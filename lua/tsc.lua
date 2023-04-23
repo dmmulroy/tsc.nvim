@@ -50,7 +50,7 @@ local function parse_tsc_output(output)
 end
 
 local function format_notification_msg(msg, spinner_idx)
-  if spinner_idx == 0 then
+  if spinner_idx == nil then
     return string.format(" %s", msg)
   end
 
@@ -65,6 +65,15 @@ M.run = function()
   local files_with_errors = {}
   local notify_record
   local spinner_idx
+
+  if vim.fn.executable("tsc") == 0 then
+    vim.notify(
+      format_notification_msg("tsc was not available or found in your $PATH. Please run `npm install typescript -g`"),
+      vim.log.levels.ERROR,
+      notify_opts
+    )
+    return
+  end
 
   if is_running then
     vim.notify(format_notification_msg("Type-checking already in progress"), vim.log.levels.WARN, notify_opts)
