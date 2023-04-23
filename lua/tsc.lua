@@ -156,7 +156,7 @@ function M.setup()
   vim.api.nvim_create_user_command(
     "TSC",
     M.run,
-    { description = "Run `tsc` asynchronously and load the results into a qflist", force = true }
+    { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true }
   )
 end
 
