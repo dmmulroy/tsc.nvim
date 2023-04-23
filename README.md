@@ -36,6 +36,8 @@ Plug 'dmmulroy/tsc.nvim'
 
 Then run `:PlugInstall` to install the plugin.
 
+For an enhanced UI/UX experience, it is recommended to install the [nvim_notify](https://github.com/rcarriga/nvim-notify) plugin as well. This plugin is optional, and the tsc-neovim-plugin will work without it.
+
 ## Setup
 
 To set up the plugin, add the following line to your `init.vim` or `init.lua` file:
