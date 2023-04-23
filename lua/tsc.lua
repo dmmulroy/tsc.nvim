@@ -86,6 +86,7 @@ M.run = function()
     if not is_running then
       return
     end
+    print(string.format("notify_record: %s", vim.inspect(notify_record)))
 
     if notify_record ~= nil then
       notify_opts = vim.tbl_extend("force", { replace = notify_record.id }, notify_opts)
@@ -99,12 +100,10 @@ M.run = function()
 
     if spinner_idx == nil then
       spinner_idx = 1
+    elseif spinner_idx > #spinner then
+      spinner_idx = 1
     else
       spinner_idx = spinner_idx + 1
-    end
-
-    if spinner_idx > #spinner then
-      spinner_idx = 1
     end
 
     vim.defer_fn(notify, 125)
