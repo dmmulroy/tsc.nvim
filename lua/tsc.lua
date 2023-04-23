@@ -1,4 +1,12 @@
+local success, pcall_result = pcall(require, "notify")
+
 local M = {}
+
+local nvim_notify
+
+if success then
+  nvim_notify = pcall_result
+end
 
 local is_running = false
 
@@ -50,33 +58,32 @@ local function parse_tsc_output(output)
 end
 
 local function format_notification_msg(msg, spinner_idx)
-  if spinner_idx == nil then
-    return string.format(" %s", msg)
+  if spinner_idx == 0 or spinner_idx == nil then
+    return string.format(" %s ", msg)
   end
 
-  return string.format(" %s %s", spinner[spinner_idx], msg)
+  return string.format(" %s %s ", spinner[spinner_idx], msg)
 end
 
 M.run = function()
   -- Closed over state
   local cmd = "tsc --noEmit"
-  local notify_opts = { title = "TSC" }
   local errors = {}
   local files_with_errors = {}
   local notify_record
-  local spinner_idx
+  local spinner_idx = 0
 
   if vim.fn.executable("tsc") == 0 then
     vim.notify(
       format_notification_msg("tsc was not available or found in your $PATH. Please run `npm install typescript -g`"),
       vim.log.levels.ERROR,
-      notify_opts
+      { title = "TSC" }
     )
     return
   end
 
   if is_running then
-    vim.notify(format_notification_msg("Type-checking already in progress"), vim.log.levels.WARN, notify_opts)
+    vim.notify(format_notification_msg("Type-checking already in progress"), vim.log.levels.WARN, { title = "TSC" })
     return
   end
 
@@ -87,29 +94,22 @@ M.run = function()
       return
     end
 
-    print(string.format("notify_record: %s", vim.inspect(notify_record)))
+    local notify_opts = { title = "TSC" }
 
     if notify_record ~= nil then
       notify_opts = vim.tbl_extend("force", { replace = notify_record.id }, notify_opts)
-      vim.notify(
-        format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
-        vim.log.levels.INFO,
-        notify_opts
-      )
-    else
-      notify_record = vim.notify(
-        format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
-        vim.log.levels.INFO,
-        notify_opts
-      )
     end
 
-    if spinner_idx == nil then
+    notify_record = vim.notify(
+      format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
+      nil,
+      notify_opts
+    )
+
+    spinner_idx = spinner_idx + 1
+
+    if spinner_idx > #spinner then
       spinner_idx = 1
-    elseif spinner_idx > #spinner then
-      spinner_idx = 1
-    else
-      spinner_idx = spinner_idx + 1
     end
 
     vim.defer_fn(notify, 125)
@@ -130,18 +130,20 @@ M.run = function()
 
   local on_exit = function()
     is_running = false
+    local notify_opts = { title = "TSC" }
 
-    if notify_record ~= nil then
-      notify_opts = vim.tbl_extend("force", notify_opts, { replace = notify_record.id })
+    if notify_record ~= nil and #errors == 0 then
+      notify_opts = vim.tbl_extend("force", { replace = notify_record.id }, notify_opts)
     end
 
     if #errors == 0 then
-      vim.notify(
-        format_notification_msg("Type-checking complete. No errors found 🎉"),
-        vim.log.levels.INFO,
-        notify_opts
-      )
+      vim.notify(format_notification_msg("Type-checking complete. No errors found 🎉"), nil, notify_opts)
       return
+    end
+
+    -- Clear any previous notifications if the user has nvim-notify installed
+    if nvim_notify ~= nil then
+      nvim_notify.dismiss()
     end
 
     vim.notify(
