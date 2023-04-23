@@ -86,17 +86,23 @@ M.run = function()
     if not is_running then
       return
     end
+
     print(string.format("notify_record: %s", vim.inspect(notify_record)))
 
     if notify_record ~= nil then
       notify_opts = vim.tbl_extend("force", { replace = notify_record.id }, notify_opts)
+      vim.notify(
+        format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
+        vim.log.levels.INFO,
+        notify_opts
+      )
+    else
+      notify_record = vim.notify(
+        format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
+        vim.log.levels.INFO,
+        notify_opts
+      )
     end
-
-    notify_record = vim.notify(
-      format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
-      vim.log.levels.INFO,
-      notify_opts
-    )
 
     if spinner_idx == nil then
       spinner_idx = 1
