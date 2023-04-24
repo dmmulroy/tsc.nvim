@@ -3,32 +3,30 @@
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ellisonleao/nvim-plugin-template/default.yml?branch=main&style=for-the-badge)
 ![Lua](https://img.shields.io/badge/Made%20with%20Lua-blueviolet.svg?style=for-the-badge&logo=lua)
 
+<img width="569" alt="image" src="https://user-images.githubusercontent.com/2755722/233876554-efb9cfe6-c038-46c8-a7cb-b7a4aa9eac5b.png">
+
 This Neovim plugin provides an asynchronous interface to run project-wide TypeScript type-checking using the TypeScript compiler (`tsc`). It displays the type-checking results in a quickfix list and provides visual notifications about the progress and completion of type-checking.
-
-## Examples
-### Running with no errors
-https://user-images.githubusercontent.com/2755722/233818163-bd2c2dda-88fc-41ea-a4bc-40972ad3ce9e.mov
-
-
-
-### Running with errors
-https://user-images.githubusercontent.com/2755722/233818168-de95bc9a-c406-4c71-9ef9-021f80db1da9.mov
-
-
-### Running without nvim_notify installed
-
-
-https://user-images.githubusercontent.com/2755722/233843746-ee116863-bef5-4e26-ba0a-afb906a2f111.mov
-
-
 
 ## Features
 
-- Asynchronous execution of the TypeScript compiler
+- Project-wide type checking
+- Asynchronous execution of the TypeScript compiler to prevent lock ups and input lag
 - Progress notifications with spinner animation
 - Quickfix list for navigating errors
 - Automatic opening of the quickfix list if there are errors
 - User-friendly command `:TSC`
+
+
+## Demo Videos
+### Type-checking with Errors
+https://user-images.githubusercontent.com/2755722/233818168-de95bc9a-c406-4c71-9ef9-021f80db1da9.mov
+
+### Type-checking without Errors
+https://user-images.githubusercontent.com/2755722/233818163-bd2c2dda-88fc-41ea-a4bc-40972ad3ce9e.mov
+
+### Usage without [nvim-notify](https://github.com/rcarriga/nvim-notify)
+https://user-images.githubusercontent.com/2755722/233843746-ee116863-bef5-4e26-ba0a-afb906a2f111.mov
+
 
 ## Installation
 
