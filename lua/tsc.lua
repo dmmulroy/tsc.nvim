@@ -1,4 +1,5 @@
 local success, pcall_result = pcall(require, "notify")
+local utils = require("tsc.utils")
 
 local M = {}
 
@@ -67,15 +68,17 @@ end
 
 M.run = function()
   -- Closed over state
-  local cmd = "tsc --noEmit"
+  local cmd = utils.get_tsc_cmd()
   local errors = {}
   local files_with_errors = {}
   local notify_record
   local spinner_idx = 0
 
-  if vim.fn.executable("tsc") == 0 then
+  if vim.fn.executable(cmd) == 0 then
     vim.notify(
-      format_notification_msg("tsc was not available or found in your $PATH. Please run `npm install typescript -g`"),
+      format_notification_msg(
+        "tsc was not available or found in your node_modules or $PATH. Please run install and try again."
+      ),
       vim.log.levels.ERROR,
       { title = "TSC" }
     )
