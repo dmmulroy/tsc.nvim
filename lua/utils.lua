@@ -12,10 +12,10 @@ M.get_tsc_cmd = function()
   local node_modules_tsc_binary = vim.fn.findfile("node_modules/.bin/tsc", M.get_root_dir())
 
   if node_modules_tsc_binary ~= "" then
-    return node_modules_tsc_binary .. " " .. "--noEmit"
+    return node_modules_tsc_binary
   end
 
-  return "tsc --noEmit"
+  return "tsc"
 end
 
 return M

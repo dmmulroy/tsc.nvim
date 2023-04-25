@@ -69,6 +69,7 @@ end
 M.run = function()
   -- Closed over state
   local cmd = utils.get_tsc_cmd()
+  local args = "--noEmit"
   local errors = {}
   local files_with_errors = {}
   local notify_record
@@ -164,7 +165,7 @@ M.run = function()
     stdout_buffered = true,
   }
 
-  vim.fn.jobstart(cmd, opts)
+  vim.fn.jobstart(cmd .. " " .. args, opts)
 end
 
 function M.is_running()
