@@ -1,5 +1,5 @@
 local success, pcall_result = pcall(require, "notify")
-local utils = require("tsc.utils")
+local utils = require("utils")
 
 local M = {}
 
