@@ -83,6 +83,7 @@ M.run = function()
       vim.log.levels.ERROR,
       { title = "TSC" }
     )
+
     return
   end
 
