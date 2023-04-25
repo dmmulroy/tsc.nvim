@@ -69,7 +69,14 @@ To run TypeScript type-checking, execute the `:TSC` command in Neovim. The plugi
 
 ## Configuration
 
-Currently, there are no configuration options for this plugin. It uses the default `tsc` command with the `--noEmit` flag to avoid generating output files during type-checking. If you need to customize the behavior, consider forking the plugin and modifying it to suit your needs.
+By default it uses the default `tsc` command with the `--noEmit` flag to avoid generating output files during type-checking. Here's the default configuration:
+
+```lua
+{
+  flags = "--noEmit",
+  spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
+}
+```
 
 ## Contributing
 
