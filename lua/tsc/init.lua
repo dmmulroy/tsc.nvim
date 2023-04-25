@@ -167,7 +167,7 @@ function M.is_running()
 end
 
 function M.setup(opts)
-  options = vim.tbl_deep_extend('force', options, opts or {})
+  options = vim.tbl_deep_extend("force", options, opts or {})
 
   vim.api.nvim_create_user_command(
     "TSC",
