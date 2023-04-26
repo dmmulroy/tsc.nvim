@@ -19,8 +19,8 @@ local options = {
     options = {
       title = "TSC",
       hide_from_history = true,
-    }
-  }
+    },
+  },
 }
 
 local function open_qf_list(errors)
@@ -121,7 +121,6 @@ M.run = function()
   if options.notify.enable then
     notify()
   end
-
 
   local function on_stdout(_, output)
     local result = parse_tsc_output(output)
