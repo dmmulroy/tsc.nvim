@@ -14,6 +14,13 @@ local is_running = false
 local options = {
   flags = "--noEmit",
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
+  notify = {
+    enable = true,
+    options = {
+      title = "TSC",
+      hide_from_history = true,
+    }
+  }
 }
 
 local function open_qf_list(errors)
@@ -92,16 +99,14 @@ M.run = function()
       return
     end
 
-    local notify_opts = { title = "TSC" }
-
     if notify_record ~= nil then
-      notify_opts = vim.tbl_extend("force", { replace = notify_record.id }, notify_opts)
+      options.notify.options = vim.tbl_extend("force", options.notify.options, { replace = notify_record.id })
     end
 
     notify_record = vim.notify(
       format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
       nil,
-      notify_opts
+      options.notify.options
     )
 
     spinner_idx = spinner_idx + 1
@@ -113,7 +118,10 @@ M.run = function()
     vim.defer_fn(notify, 125)
   end
 
-  notify()
+  if options.notify.enable then
+    notify()
+  end
+
 
   local function on_stdout(_, output)
     local result = parse_tsc_output(output)
@@ -128,6 +136,11 @@ M.run = function()
 
   local on_exit = function()
     is_running = false
+
+    if not options.notify.enable then
+      return
+    end
+
     local notify_opts = { title = "TSC" }
 
     if notify_record ~= nil and #errors == 0 then

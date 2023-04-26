@@ -75,6 +75,13 @@ By default it uses the default `tsc` command with the `--noEmit` flag to avoid g
 {
   flags = "--noEmit",
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
+  notify = {
+    enable = true,
+    options = {
+      title = "TSC",
+      hide_from_history = true,
+    }
+  }
 }
 ```
 
