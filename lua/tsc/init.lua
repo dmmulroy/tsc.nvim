@@ -21,22 +21,21 @@ local DEFAULT_CONFIG = {
 
 local DEFAULT_NOTIFY_OPTIONS = {
   title = "TSC",
+  hide_from_history = false,
 }
 
 local config = {}
 
 local function get_notify_options(...)
   local overrides = {}
+
   for _, opts in ipairs({ ... }) do
     for key, value in pairs(opts) do
       overrides[key] = value
     end
   end
-  print("overrides: ", vim.inspect(overrides))
-  print("...")
-  local ret = vim.tbl_deep_extend("force", {}, DEFAULT_NOTIFY_OPTIONS, overrides)
-  print("ret: ", vim.inspect(ret))
-  return ret
+
+  return vim.tbl_deep_extend("force", {}, DEFAULT_NOTIFY_OPTIONS, overrides)
 end
 
 local function set_qflist(errors)
@@ -116,17 +115,13 @@ M.run = function()
       return
     end
 
-    local notify_opts = get_notify_options(
-      (notify_record and { replace = notify_record.id }),
-      (config.hide_progress_notifications_from_history and notify_called and { hide_from_history = true })
-    )
-
-    print("notify-opts: ", vim.inspect(notify_opts))
-    print("...")
     notify_record = vim.notify(
       format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
       nil,
-      notify_opts
+      get_notify_options(
+        (notify_record and { replace = notify_record.id }),
+        (config.hide_progress_notifications_from_history and notify_called and { hide_from_history = true })
+      )
     )
 
     notify_called = true
