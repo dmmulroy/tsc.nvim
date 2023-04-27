@@ -170,14 +170,15 @@ M.run = function()
     if nvim_notify ~= nil then
       nvim_notify.dismiss()
     end
+    local notify_opts = get_notify_options((notify_record and { replace = notify_record.id }))
 
-    print("on_exit 2")
+    print("on_exit 2: ", vim.inspect(notify_opts))
     vim.notify(
       format_notification_msg(
         string.format("Type-checking complete. Found %s errors across %s files 💥", #errors, #files_with_errors)
       ),
       vim.log.levels.ERROR,
-      get_notify_options((notify_record and { replace = notify_record.id }))
+      notify_opts
     )
   end
 
