@@ -112,7 +112,7 @@ M.run = function()
       nil,
       get_notify_options(
         (notify_record and { replace = notify_record.id }),
-        (config.hide_progress_notifications_from_history and notify_called and { history = false })
+        (config.hide_progress_notifications_from_history and notify_called and { hide_from_history = false })
       )
     )
 
