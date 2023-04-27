@@ -11,15 +11,16 @@ end
 
 local is_running = false
 
-local options = {
+local config = {
+  auto_open_qflist = true,
   flags = "--noEmit",
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
 }
 
-local function set_qf_list(errors)
+local function set_qflist(errors)
   vim.fn.setqflist({}, "r", { title = "TSC", items = errors })
 
-  if #errors > 0 then
+  if #errors > 0 and config.auto_open_qflist then
     vim.cmd("copen")
   end
 end
@@ -57,7 +58,7 @@ local function format_notification_msg(msg, spinner_idx)
     return string.format(" %s ", msg)
   end
 
-  return string.format(" %s %s ", options.spinner[spinner_idx], msg)
+  return string.format(" %s %s ", config.spinner[spinner_idx], msg)
 end
 
 M.run = function()
@@ -106,7 +107,7 @@ M.run = function()
 
     spinner_idx = spinner_idx + 1
 
-    if spinner_idx > #options.spinner then
+    if spinner_idx > #config.spinner then
       spinner_idx = 1
     end
 
@@ -121,7 +122,7 @@ M.run = function()
     errors = result.errors
     files_with_errors = result.files
 
-    set_qf_list(errors)
+    set_qflist(errors)
   end
 
   local on_exit = function()
@@ -157,7 +158,7 @@ M.run = function()
     stdout_buffered = true,
   }
 
-  vim.fn.jobstart(cmd .. " " .. options.flags, opts)
+  vim.fn.jobstart(cmd .. " " .. config.flags, opts)
 end
 
 function M.is_running()
@@ -165,7 +166,7 @@ function M.is_running()
 end
 
 function M.setup(opts)
-  options = vim.tbl_deep_extend("force", options, opts or {})
+  config = vim.tbl_deep_extend("force", config, opts or {})
 
   vim.api.nvim_create_user_command(
     "TSC",
