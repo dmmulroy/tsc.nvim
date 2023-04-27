@@ -27,7 +27,7 @@ local config = {}
 
 local function get_notify_options(...)
   local overrides = { ... }
-  return vim.tbl_deep_extend("force", {}, DEFAULT_NOTIFY_OPTIONS, unpack(overrides))
+  return vim.tbl_deep_extend("force", {}, DEFAULT_NOTIFY_OPTIONS, unpack(overrides) or {})
 end
 
 local function set_qflist(errors)
