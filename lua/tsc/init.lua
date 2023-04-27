@@ -127,7 +127,7 @@ M.run = function()
     vim.defer_fn(notify, 125)
   end
 
-  if config.notify.enable_progress_notifications then
+  if config.enable_progress_notifications then
     notify()
   end
 
@@ -143,7 +143,7 @@ M.run = function()
   local on_exit = function()
     is_running = false
 
-    if not config.notify.enable_progress_notifications then
+    if not config.enable_progress_notifications then
       return
     end
 
