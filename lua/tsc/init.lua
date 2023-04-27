@@ -27,11 +27,13 @@ local config = {}
 
 local function get_notify_options(...)
   local overrides = { ... }
+  table.insert(overrides, 1, {})
+  table.insert(overrides, 2, DEFAULT_NOTIFY_OPTIONS)
   print("overrides", vim.inspect(overrides))
   print("...")
-  print("unpacked overrides", vim.inspect(unpack(overrides)))
-  print("...")
-  return vim.tbl_deep_extend("force", {}, DEFAULT_NOTIFY_OPTIONS, unpack(overrides) or {})
+  local ret = vim.tbl_deep_extend("force", unpack(overrides))
+  print("return val: ", vim.inspect(ret))
+  return ret
 end
 
 local function set_qflist(errors)
