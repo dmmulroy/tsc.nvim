@@ -16,17 +16,19 @@ This Neovim plugin provides an asynchronous interface to run project-wide TypeSc
 - Automatic opening of the quickfix list if there are errors
 - User-friendly command `:TSC`
 
-
 ## Demo Videos
+
 ### Type-checking with Errors
+
 https://user-images.githubusercontent.com/2755722/233818168-de95bc9a-c406-4c71-9ef9-021f80db1da9.mov
 
 ### Type-checking without Errors
+
 https://user-images.githubusercontent.com/2755722/233818163-bd2c2dda-88fc-41ea-a4bc-40972ad3ce9e.mov
 
 ### Usage without [nvim-notify](https://github.com/rcarriga/nvim-notify)
-https://user-images.githubusercontent.com/2755722/233843746-ee116863-bef5-4e26-ba0a-afb906a2f111.mov
 
+https://user-images.githubusercontent.com/2755722/233843746-ee116863-bef5-4e26-ba0a-afb906a2f111.mov
 
 ## Installation
 
@@ -73,6 +75,7 @@ By default it uses the default `tsc` command with the `--noEmit` flag to avoid g
 
 ```lua
 {
+  auto_open_qflist = true,
   flags = "--noEmit",
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
   notify = {
