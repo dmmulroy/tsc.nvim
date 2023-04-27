@@ -151,11 +151,9 @@ M.run = function()
   local on_exit = function()
     is_running = false
 
-    print("on_exit")
     if not config.enable_progress_notifications then
       return
     end
-    print("on_exit 1")
 
     if #errors == 0 then
       vim.notify(
@@ -170,15 +168,12 @@ M.run = function()
     if nvim_notify ~= nil then
       nvim_notify.dismiss()
     end
-    local notify_opts = get_notify_options((notify_record and { replace = notify_record.id }))
 
-    print("on_exit 2: ", vim.inspect(notify_opts))
     vim.notify(
       format_notification_msg(
         string.format("Type-checking complete. Found %s errors across %s files 💥", #errors, #files_with_errors)
       ),
       vim.log.levels.ERROR,
-      -- notify_opts
       get_notify_options()
     )
   end
@@ -198,8 +193,6 @@ end
 
 function M.setup(opts)
   config = vim.tbl_deep_extend("force", config, DEFAULT_CONFIG, opts or {})
-
-  print(vim.inspect(config))
 
   vim.api.nvim_create_user_command(
     "TSC",
