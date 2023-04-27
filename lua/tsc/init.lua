@@ -26,13 +26,16 @@ local DEFAULT_NOTIFY_OPTIONS = {
 local config = {}
 
 local function get_notify_options(...)
-  local overrides = { ... }
-  table.insert(overrides, 1, {})
-  table.insert(overrides, 2, DEFAULT_NOTIFY_OPTIONS)
-  print("overrides", vim.inspect(overrides))
+  local overrides = {}
+  for _, opts in ipairs({ ... }) do
+    for key, value in pairs(opts) do
+      overrides[key] = value
+    end
+  end
+  print("overrides: ", vim.inspect(overrides))
   print("...")
-  local ret = vim.tbl_deep_extend("force", unpack(overrides))
-  print("return val: ", vim.inspect(ret))
+  local ret = vim.tbl_deep_extend("force", {}, DEFAULT_NOTIFY_OPTIONS, overrides)
+  print("ret: ", vim.inspect(ret))
   return ret
 end
 
@@ -118,7 +121,7 @@ M.run = function()
       (config.hide_progress_notifications_from_history and notify_called and { hide_from_history = true })
     )
 
-    print("notify-opts", vim.inspect(notify_opts))
+    print("notify-opts: ", vim.inspect(notify_opts))
     print("...")
     notify_record = vim.notify(
       format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
