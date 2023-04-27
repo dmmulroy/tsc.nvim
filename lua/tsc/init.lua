@@ -112,6 +112,8 @@ M.run = function()
       (config.hide_progress_notifications_from_history and notify_called and { hide_from_history = true })
     )
 
+    print(vim.inspect(notify_opts))
+
     notify_record = vim.notify(
       format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
       nil,
