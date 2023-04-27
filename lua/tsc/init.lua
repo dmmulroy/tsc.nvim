@@ -178,7 +178,8 @@ M.run = function()
         string.format("Type-checking complete. Found %s errors across %s files 💥", #errors, #files_with_errors)
       ),
       vim.log.levels.ERROR,
-      notify_opts
+      -- notify_opts
+      get_notify_options()
     )
   end
 
