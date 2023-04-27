@@ -107,13 +107,15 @@ M.run = function()
       return
     end
 
+    local notify_opts = get_notify_options(
+      (notify_record and { replace = notify_record.id }),
+      (config.hide_progress_notifications_from_history and notify_called and { hide_from_history = true })
+    )
+
     notify_record = vim.notify(
       format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
       nil,
-      get_notify_options(
-        (notify_record and { replace = notify_record.id }),
-        (config.hide_progress_notifications_from_history and notify_called and { hide_from_history = true })
-      )
+      notify_opts
     )
 
     notify_called = true
