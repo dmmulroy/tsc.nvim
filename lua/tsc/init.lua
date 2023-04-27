@@ -16,7 +16,7 @@ local options = {
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
 }
 
-local function open_qf_list(errors)
+local function set_qf_list(errors)
   vim.fn.setqflist({}, "r", { title = "TSC", items = errors })
 
   if #errors > 0 then
@@ -121,9 +121,7 @@ M.run = function()
     errors = result.errors
     files_with_errors = result.files
 
-    if #errors > 0 then
-      open_qf_list(errors)
-    end
+    set_qf_list(errors)
   end
 
   local on_exit = function()
