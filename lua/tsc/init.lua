@@ -11,11 +11,32 @@ end
 
 local is_running = false
 
-local config = {
+local DEFAULT_CONFIG = {
   auto_open_qflist = true,
+  enable_progress_notifications = true,
   flags = "--noEmit",
+  hide_progress_notifications_from_history = true,
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
 }
+
+local DEFAULT_NOTIFY_OPTIONS = {
+  title = "TSC",
+  hide_from_history = false,
+}
+
+local config = {}
+
+local function get_notify_options(...)
+  local overrides = {}
+
+  for _, opts in ipairs({ ... }) do
+    for key, value in pairs(opts) do
+      overrides[key] = value
+    end
+  end
+
+  return vim.tbl_deep_extend("force", {}, DEFAULT_NOTIFY_OPTIONS, overrides)
+end
 
 local function set_qflist(errors)
   vim.fn.setqflist({}, "r", { title = "TSC", items = errors })
@@ -67,6 +88,7 @@ M.run = function()
   local errors = {}
   local files_with_errors = {}
   local notify_record
+  local notify_called = false
   local spinner_idx = 0
 
   if vim.fn.executable(cmd) == 0 then
@@ -75,14 +97,14 @@ M.run = function()
         "tsc was not available or found in your node_modules or $PATH. Please run install and try again."
       ),
       vim.log.levels.ERROR,
-      { title = "TSC" }
+      get_notify_options()
     )
 
     return
   end
 
   if is_running then
-    vim.notify(format_notification_msg("Type-checking already in progress"), vim.log.levels.WARN, { title = "TSC" })
+    vim.notify(format_notification_msg("Type-checking already in progress"), vim.log.levels.WARN, get_notify_options())
     return
   end
 
@@ -93,17 +115,16 @@ M.run = function()
       return
     end
 
-    local notify_opts = { title = "TSC" }
-
-    if notify_record ~= nil then
-      notify_opts = vim.tbl_extend("force", { replace = notify_record.id }, notify_opts)
-    end
-
     notify_record = vim.notify(
       format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
       nil,
-      notify_opts
+      get_notify_options(
+        (notify_record and { replace = notify_record.id }),
+        (config.hide_progress_notifications_from_history and notify_called and { hide_from_history = true })
+      )
     )
+
+    notify_called = true
 
     spinner_idx = spinner_idx + 1
 
@@ -114,7 +135,9 @@ M.run = function()
     vim.defer_fn(notify, 125)
   end
 
-  notify()
+  if config.enable_progress_notifications then
+    notify()
+  end
 
   local function on_stdout(_, output)
     local result = parse_tsc_output(output)
@@ -127,14 +150,17 @@ M.run = function()
 
   local on_exit = function()
     is_running = false
-    local notify_opts = { title = "TSC" }
 
-    if notify_record ~= nil and #errors == 0 then
-      notify_opts = vim.tbl_extend("force", { replace = notify_record.id }, notify_opts)
+    if not config.enable_progress_notifications then
+      return
     end
 
     if #errors == 0 then
-      vim.notify(format_notification_msg("Type-checking complete. No errors found 🎉"), nil, notify_opts)
+      vim.notify(
+        format_notification_msg("Type-checking complete. No errors found 🎉"),
+        nil,
+        get_notify_options((notify_record and { replace = notify_record.id }))
+      )
       return
     end
 
@@ -148,7 +174,7 @@ M.run = function()
         string.format("Type-checking complete. Found %s errors across %s files 💥", #errors, #files_with_errors)
       ),
       vim.log.levels.ERROR,
-      notify_opts
+      get_notify_options()
     )
   end
 
@@ -166,7 +192,7 @@ function M.is_running()
 end
 
 function M.setup(opts)
-  config = vim.tbl_deep_extend("force", config, opts or {})
+  config = vim.tbl_deep_extend("force", config, DEFAULT_CONFIG, opts or {})
 
   vim.api.nvim_create_user_command(
     "TSC",
