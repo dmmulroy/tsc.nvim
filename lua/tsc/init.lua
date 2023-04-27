@@ -27,6 +27,8 @@ local config = {}
 
 local function get_notify_options(...)
   local overrides = { ... }
+  print(vim.inspect(overrides))
+  print("unpacked", vim.inspect(unpack(overrides)))
   return vim.tbl_deep_extend("force", {}, DEFAULT_NOTIFY_OPTIONS, unpack(overrides) or {})
 end
 
