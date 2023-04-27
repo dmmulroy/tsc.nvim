@@ -151,9 +151,11 @@ M.run = function()
   local on_exit = function()
     is_running = false
 
+    print("on_exit")
     if not config.enable_progress_notifications then
       return
     end
+    print("on_exit 1")
 
     if #errors == 0 then
       vim.notify(
@@ -169,6 +171,7 @@ M.run = function()
       nvim_notify.dismiss()
     end
 
+    print("on_exit 2")
     vim.notify(
       format_notification_msg(
         string.format("Type-checking complete. Found %s errors across %s files 💥", #errors, #files_with_errors)
