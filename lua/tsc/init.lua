@@ -91,7 +91,7 @@ M.run = function()
   local notify_called = false
   local spinner_idx = 0
 
-  if vim.fn.executable(cmd) == 0 then
+  if not utils.is_executable(cmd) then
     vim.notify(
       format_notification_msg(
         "tsc was not available or found in your node_modules or $PATH. Please run install and try again."
@@ -194,11 +194,11 @@ end
 function M.setup(opts)
   config = vim.tbl_deep_extend("force", config, DEFAULT_CONFIG, opts or {})
 
-  vim.api.nvim_create_user_command(
-    "TSC",
-    M.run,
-    { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true }
-  )
+  vim.api.nvim_create_user_command("TSC", function()
+    vim.cmd("silent cd %:h")
+    M.run()
+    vim.cmd("silent cd-")
+  end, { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true })
 end
 
 return M
