@@ -91,7 +91,7 @@ M.run = function()
   local notify_called = false
   local spinner_idx = 0
 
-  if utils.is_executable(cmd) then
+  if not utils.is_executable(cmd) then
     vim.notify(
       format_notification_msg(
         "tsc was not available or found in your node_modules or $PATH. Please run install and try again."
