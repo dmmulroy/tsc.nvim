@@ -83,6 +83,31 @@ By default it uses the default `tsc` command with the `--noEmit` flag to avoid g
 }
 ```
 
+## FAQs
+
+### I'm using `nvim-notify` and being spammed by progress notifcations, what's going on?
+
+It's likely that the overwritten default `vim.notify` function isn't returning `nvim-notify`'s notification record, which is used to replace the existing notification. Make sure that you're nvim-notify configuration looks something like this:
+
+```lua
+require('notify')
+
+vim.notify = function(message, level, opts)
+  return notify(message, level, opts) -- <-- Important to return the value from `nvim-notify`
+end
+
+```
+
+### Why doesn't `tsc.nvim` typecheck my entire monorepo?
+
+In a monorepo setup, tsc.nvim only typechecks the current project by default because it uses the tsconfig.json of the current directory. If you need to typecheck across all projects in the monorepo, you must change the flags configuration option in the setup function from --noEmit to --build --composite. The --build flag instructs TypeScript to typecheck all referenced projects and the --composite flag enables project references and incremental builds for better management of dependencies and build performance. Your adjusted setup function should look like this:
+
+```lua
+require('tsc').setup({
+  flags = "--build --composite",
+})
+```
+
 ## Contributing
 
 Feel free to open issues or submit pull requests if you encounter any bugs or have suggestions for improvements. Your contributions are welcome!
