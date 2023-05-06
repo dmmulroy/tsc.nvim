@@ -9,8 +9,6 @@ if success then
   nvim_notify = pcall_result
 end
 
-local is_running = false
-
 local DEFAULT_CONFIG = {
   auto_open_qflist = true,
   enable_progress_notifications = true,
@@ -25,6 +23,8 @@ local DEFAULT_NOTIFY_OPTIONS = {
 }
 
 local config = {}
+
+local is_running = false
 
 local function get_notify_options(...)
   local overrides = {}
