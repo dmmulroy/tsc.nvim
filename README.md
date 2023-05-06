@@ -71,7 +71,7 @@ To run TypeScript type-checking, execute the `:TSC` command in Neovim. The plugi
 
 ## Configuration
 
-By default, the plugin uses the default tsc command with the --noEmit flag to avoid generating output files during type-checking. It also emulates the default tsc behavior of performing a backward search from the current directory for a tsconfig file. The flags option can accept both a string and a table. Here's the default configuration:
+By default, the plugin uses the default `tsc` command with the `--noEmit` flag to avoid generating output files during type-checking. It also emulates the default tsc behavior of performing a backward search from the current directory for a `tsconfig` file. The flags option can accept both a string and a table. Here's the default configuration:
 
 ```lua
 {
