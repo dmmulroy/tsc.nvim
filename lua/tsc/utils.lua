@@ -44,13 +44,9 @@ M.parse_flags = function(flags)
         ),
         vim.log.levels.ERROR
       )
-
-      goto continue
+    else
+      parsed_flags[string.gsub(key, "%-%-", "")] = value
     end
-
-    parsed_flags[string.gsub(key, "%-%-", "")] = value
-
-    ::continue::
   end
 
   local flags_string = ""
@@ -65,7 +61,6 @@ M.parse_flags = function(flags)
 
   return flags_string
 end
-
 
 M.parse_tsc_output = function(output)
   local errors = {}
