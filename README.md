@@ -71,16 +71,27 @@ To run TypeScript type-checking, execute the `:TSC` command in Neovim. The plugi
 
 ## Configuration
 
-By default it uses the default `tsc` command with the `--noEmit` flag to avoid generating output files during type-checking. Here's the default configuration:
+By default, the plugin uses the default tsc command with the --noEmit flag to avoid generating output files during type-checking. It also emulates the default tsc behavior of performing a backward search from the current directory for a tsconfig file. The flags option can accept both a string and a table. Here's the default configuration:
 
 ```lua
 {
   auto_open_qflist = true,
   enable_progress_notifications = true,
-  flags = "--noEmit",
+  flags = {
+    noEmit = true,
+    project = function()
+      return utils.find_nearest_tsconfig()
+    end,
+  },
   hide_progress_notifications_from_history = true,
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
 }
+```
+
+With this configuration, you can use keys for flag names and their corresponding values to enable/disable the flag (in the case of `noEmit = true`) or provide a function (as in the case of the `project`). This makes the configuration more explicit and easier to read. Additionally, the flags option is backwards compatible and can accept a string value if you prefer a simpler configuration:
+
+```lua
+flags = "--noEmit",
 ```
 
 ## FAQs
@@ -98,15 +109,19 @@ end
 
 ```
 
-### Why doesn't `tsc.nvim` typecheck my entire monorepo?
+### Why doesn't tsc.nvim typecheck my entire monorepo?
 
-In a monorepo setup, tsc.nvim only typechecks the current project by default because it uses the tsconfig.json of the current directory. If you need to typecheck across all projects in the monorepo, you must change the flags configuration option in the setup function from --noEmit to --build --composite. The --build flag instructs TypeScript to typecheck all referenced projects and the --composite flag enables project references and incremental builds for better management of dependencies and build performance. Your adjusted setup function should look like this:
+In a monorepo setup, tsc.nvim only typechecks the project associated with the nearest `tsconfig.json` by default. If you need to typecheck across all projects in the monorepo, you must change the flags configuration option in the setup function to include `--build`. The `--build` flag instructs TypeScript to typecheck all referenced projects, taking into account project references and incremental builds for better management of dependencies and build performance. Your adjusted setup function should look like this:
 
 ```lua
 require('tsc').setup({
-  flags = "--build --composite",
+  flags = {
+    build = true,
+  },
 })
 ```
+
+With this configuration, tsc.nvim will typecheck all projects in the monorepo, taking into account project references and incremental builds.
 
 ## Contributing
 
