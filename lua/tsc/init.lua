@@ -9,12 +9,15 @@ if success then
   nvim_notify = pcall_result
 end
 
-local is_running = false
-
 local DEFAULT_CONFIG = {
   auto_open_qflist = true,
   enable_progress_notifications = true,
-  flags = "--noEmit",
+  flags = {
+    noEmit = true,
+    project = function()
+      return utils.find_nearest_tsconfig()
+    end,
+  },
   hide_progress_notifications_from_history = true,
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
 }
@@ -25,6 +28,7 @@ local DEFAULT_NOTIFY_OPTIONS = {
 }
 
 local config = {}
+local is_running = false
 
 local function get_notify_options(...)
   local overrides = {}
@@ -38,42 +42,6 @@ local function get_notify_options(...)
   return vim.tbl_deep_extend("force", {}, DEFAULT_NOTIFY_OPTIONS, overrides)
 end
 
-local function set_qflist(errors)
-  vim.fn.setqflist({}, "r", { title = "TSC", items = errors })
-
-  if #errors > 0 and config.auto_open_qflist then
-    vim.cmd("copen")
-  end
-end
-
-local function parse_tsc_output(output)
-  local errors = {}
-  local files = {}
-
-  if output == nil then
-    return { errors = errors, files = files }
-  end
-
-  for _, line in ipairs(output) do
-    local filename, lineno, colno, message = line:match("^(.+)%((%d+),(%d+)%)%s*:%s*(.+)$")
-    if filename ~= nil then
-      table.insert(errors, {
-        filename = filename,
-        lnum = tonumber(lineno),
-        col = tonumber(colno),
-        text = message,
-        type = "E",
-      })
-
-      if vim.tbl_contains(files, filename) == false then
-        table.insert(files, filename)
-      end
-    end
-  end
-
-  return { errors = errors, files = files }
-end
-
 local function format_notification_msg(msg, spinner_idx)
   if spinner_idx == 0 or spinner_idx == nil then
     return string.format(" %s ", msg)
@@ -84,14 +52,14 @@ end
 
 M.run = function()
   -- Closed over state
-  local cmd = utils.get_tsc_cmd()
+  local tsc = utils.find_tsc_bin()
   local errors = {}
   local files_with_errors = {}
   local notify_record
   local notify_called = false
   local spinner_idx = 0
 
-  if not utils.is_executable(cmd) then
+  if not utils.is_executable(tsc) then
     vim.notify(
       format_notification_msg(
         "tsc was not available or found in your node_modules or $PATH. Please run install and try again."
@@ -140,12 +108,12 @@ M.run = function()
   end
 
   local function on_stdout(_, output)
-    local result = parse_tsc_output(output)
+    local result = utils.parse_tsc_output(output)
 
     errors = result.errors
     files_with_errors = result.files
 
-    set_qflist(errors)
+    utils.set_qflist(errors, config.auto_open_qflist)
   end
 
   local on_exit = function()
@@ -184,7 +152,7 @@ M.run = function()
     stdout_buffered = true,
   }
 
-  vim.fn.jobstart(cmd .. " " .. config.flags, opts)
+  vim.fn.jobstart(tsc .. " " .. utils.parse_flags(config.flags), opts)
 end
 
 function M.is_running()
@@ -192,12 +160,10 @@ function M.is_running()
 end
 
 function M.setup(opts)
-  config = vim.tbl_deep_extend("force", config, DEFAULT_CONFIG, opts or {})
+  config = vim.tbl_extend("force", config, DEFAULT_CONFIG, opts or {})
 
   vim.api.nvim_create_user_command("TSC", function()
-    vim.cmd("silent cd %:h")
     M.run()
-    vim.cmd("silent cd-")
   end, { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true })
 end
 
