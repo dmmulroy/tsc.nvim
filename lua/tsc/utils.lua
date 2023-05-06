@@ -29,9 +29,11 @@ M.parse_flags = function(flags)
     return flags
   end
 
-  local parsed_flags = {}
+  local parsed_flags = ""
 
   for key, value in pairs(flags) do
+    key = string.gsub(key, "%-%-", "")
+
     if type(value) == "function" then
       value = value()
     end
@@ -45,21 +47,17 @@ M.parse_flags = function(flags)
         vim.log.levels.ERROR
       )
     else
-      parsed_flags[string.gsub(key, "%-%-", "")] = value
+      if type(value) == "boolean" then
+        if value == true then
+          parsed_flags = parsed_flags .. string.format("--%s ", key)
+        end
+      else
+        parsed_flags = parsed_flags .. string.format("--%s %s ", key, value)
+      end
     end
   end
 
-  local flags_string = ""
-
-  for key, value in pairs(parsed_flags) do
-    if value == true then
-      flags_string = flags_string .. string.format("--%s ", key)
-    else
-      flags_string = flags_string .. string.format("--%s %s ", key, value)
-    end
-  end
-
-  return flags_string
+  return parsed_flags
 end
 
 M.parse_tsc_output = function(output)
