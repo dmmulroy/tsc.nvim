@@ -89,7 +89,9 @@ M.parse_tsc_output = function(output)
 end
 
 M.set_qflist = function(errors, auto_open)
-  auto_open = auto_open or true
+  if auto_open == nil then
+    auto_open = true
+  end
 
   vim.fn.setqflist({}, "r", { title = "TSC", items = errors })
 
