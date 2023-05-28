@@ -88,15 +88,16 @@ M.parse_tsc_output = function(output)
   return { errors = errors, files = files }
 end
 
-M.set_qflist = function(errors, auto_open)
-  if auto_open == nil then
-    auto_open = true
-  end
+M.set_qflist = function(errors, opts)
+  local DEFAULT_OPTS = { auto_open = true, auto_close = false }
+  local final_opts = vim.tbl_extend("force", DEFAULT_OPTS, opts or {})
 
   vim.fn.setqflist({}, "r", { title = "TSC", items = errors })
 
-  if #errors > 0 and auto_open then
+  if #errors > 0 and final_opts.auto_open then
     vim.cmd("copen")
+  elseif #errors == 0 and final_opts.auto_close then
+    vim.cmd("cclose")
   end
 end
 

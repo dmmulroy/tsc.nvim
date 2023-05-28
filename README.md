@@ -76,6 +76,7 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
 ```lua
 {
   auto_open_qflist = true,
+  auto_close_qflist = false,
   enable_progress_notifications = true,
   flags = {
     noEmit = true,

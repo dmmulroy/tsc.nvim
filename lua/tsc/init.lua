@@ -11,6 +11,7 @@ end
 
 local DEFAULT_CONFIG = {
   auto_open_qflist = true,
+  auto_close_qflist = false,
   enable_progress_notifications = true,
   flags = {
     noEmit = true,
@@ -113,7 +114,7 @@ M.run = function()
     errors = result.errors
     files_with_errors = result.files
 
-    utils.set_qflist(errors, config.auto_open_qflist)
+    utils.set_qflist(errors, { auto_open = config.auto_open_qflist, auto_close = config.auto_close_qflist })
   end
 
   local on_exit = function()
