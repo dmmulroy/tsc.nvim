@@ -12,6 +12,7 @@ end
 local DEFAULT_CONFIG = {
   auto_open_qflist = true,
   auto_close_qflist = false,
+  bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
   flags = {
     noEmit = true,
@@ -53,7 +54,7 @@ end
 
 M.run = function()
   -- Closed over state
-  local tsc = utils.find_tsc_bin()
+  local tsc = config.bin_path
   local errors = {}
   local files_with_errors = {}
   local notify_record
