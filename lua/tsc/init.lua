@@ -162,7 +162,7 @@ function M.is_running()
 end
 
 function M.setup(opts)
-  config = vim.tbl_extend("force", config, DEFAULT_CONFIG, opts or {})
+  config = vim.tbl_deep_extend("force", config, DEFAULT_CONFIG, opts or {})
 
   vim.api.nvim_create_user_command("TSC", function()
     M.run()
