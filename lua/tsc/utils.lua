@@ -1,3 +1,5 @@
+local better_messages = require("tsc.better-messages")
+
 local M = {}
 
 M.is_executable = function(cmd)
@@ -75,7 +77,7 @@ M.parse_tsc_output = function(output)
         filename = filename,
         lnum = tonumber(lineno),
         col = tonumber(colno),
-        text = message,
+        text = better_messages.best_message(message),
         type = "E",
       })
 
