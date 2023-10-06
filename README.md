@@ -83,6 +83,7 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
   },
   hide_progress_notifications_from_history = true,
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
+  pretty_errors = false,
 }
 ```
 
