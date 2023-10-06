@@ -29,7 +29,7 @@ local function parse_out_links(line)
     if sentence_end == nil then
       return line:sub(0, link_start - 2) .. line:sub(link_end)
     end
-    return line:sub(0, link_start - 2) .. line:sub(sentence_end)
+    return line:sub(0, link_start - 2) .. line:sub(sentence_end + 1)
   end
 
   return line:sub(0, link_start - 1) .. match .. line:sub(link_end + 1)
@@ -113,7 +113,7 @@ M.best_message = function(message)
 
   local slots = get_improved_text_slots(md)
   if #slots == 0 then
-    return md.body
+    return "TS" .. error_num .. ": " .. md.body
   end
 
   local matched_slots = match_slots(slots, original_message, md.frontmatter["original"])
