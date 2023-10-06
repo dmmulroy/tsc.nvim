@@ -62,7 +62,7 @@ M.parse_flags = function(flags)
   return parsed_flags
 end
 
-M.parse_tsc_output = function(output, should_show_pretty_errors)
+M.parse_tsc_output = function(output, config)
   local errors = {}
   local files = {}
 
@@ -74,7 +74,7 @@ M.parse_tsc_output = function(output, should_show_pretty_errors)
     local filename, lineno, colno, message = line:match("^(.+)%((%d+),(%d+)%)%s*:%s*(.+)$")
     if filename ~= nil then
       local text = message
-      if should_show_pretty_errors then
+      if config.pretty_errors then
         text = better_messages.best_message(message)
       end
       table.insert(errors, {

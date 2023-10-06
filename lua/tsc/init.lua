@@ -111,7 +111,7 @@ M.run = function()
   end
 
   local function on_stdout(_, output)
-    local result = utils.parse_tsc_output(output, config.pretty_errors)
+    local result = utils.parse_tsc_output(output, config)
 
     errors = result.errors
     files_with_errors = result.files
