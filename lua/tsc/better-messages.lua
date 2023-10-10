@@ -84,16 +84,43 @@ local function get_improved_text_slots(md)
 end
 
 --- Match a slot with the text from the original message
---- @param slots table<integer, string>
 --- @param original_message string
 --- @param md_original_message string
 --- @return table<string, string>
-local function match_slots(slots, original_message, md_original_message)
+local function match_slots(original_message, md_original_message)
+  --- @type table<string, string>
   local matched_slots = {}
-  for i = 1, #slots do
-    local idx = md_original_message:find(slots[i])
-    local match = original_message:match("%w+", idx)
-    matched_slots[slots[i]] = match
+
+  --- @type table<integer, string>
+  local dividing_strings = {}
+  for str in md_original_message:gmatch("([^%{%d+%}]+)") do
+    table.insert(dividing_strings, str)
+  end
+
+  local slot = ""
+  local dividing_str_idx = 1
+  local char_idx = 1
+  while char_idx < original_message:len() do
+    local div_str = dividing_strings[dividing_str_idx]
+    local test_str = original_message:sub(char_idx, char_idx + div_str:len()- 1)
+    if test_str == div_str then
+      if slot:len() > 0 then
+        local zero_idx_div_str_idx = dividing_str_idx - 2
+        local key = "{".. zero_idx_div_str_idx .."}"
+        matched_slots[key] = slot
+        slot = ""
+      end
+      char_idx = char_idx + div_str:len()
+      dividing_str_idx = dividing_str_idx + 1
+    else
+      slot = slot .. original_message:sub(char_idx,char_idx)
+      char_idx = char_idx + 1
+    end
+  end
+  if slot:len() > 0 then
+    local zero_idx_div_str_idx = dividing_str_idx - 2
+    local key = "{".. zero_idx_div_str_idx .."}"
+    matched_slots[key] = slot
   end
   return matched_slots
 end
@@ -116,7 +143,7 @@ M.best_message = function(message)
     return "TS" .. error_num .. ": " .. md.body
   end
 
-  local matched_slots = match_slots(slots, original_message, md.frontmatter["original"])
+  local matched_slots = match_slots(original_message, md.frontmatter["original"])
 
   local output_message = md.body
   for k, v in pairs(matched_slots) do

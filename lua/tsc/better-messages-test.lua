@@ -20,6 +20,12 @@ describe("Handles slots", function()
       "TS2551: You're trying to access 'foo' on an object that doesn't contain it. Did you mean 'baz'?"
     assert.equals(expected_message, bm.best_message(original_message))
   end)
+  it("Handles slots that are long", function()
+  local original_message = "TS2322: Type '{ data: Readonly<{ kind: \"area\"; data: readonly SingleValueSeriesDatum[]; options?: Readonly<{ color?: Color | undefined; lastPriceAnimation?: \"continuous\" | \"disabled\" | undefined; markers?: readonly SeriesMarker[] | undefined; }> | undefined; }>; options: Readonly<...>; title: Element; toolbarOptions: { ...; }; }' is not assignable to type 'IntrinsicAttributes & Readonly<{ data: Series | readonly Series[] | unique symbol; option?: Readonly<{ heightPx?: number | undefined; widthPx?: number | undefined; priceFormatter?: PriceFormatterFn | undefined; timeFormatter?: TimeFormatterFn | undefined; }> | undefined; title?: ReactNode; toolbarOptions?: Readonly<...'."
+    local expected_message =
+      "TS2322: I was expecting a type matching 'IntrinsicAttributes & Readonly<{ data: Series | readonly Series[] | unique symbol; option?: Readonly<{ heightPx?: number | undefined; widthPx?: number | undefined; priceFormatter?: PriceFormatterFn | undefined; timeFormatter?: TimeFormatterFn | undefined; }> | undefined; title?: ReactNode; toolbarOptions?: Readonly<...', but instead you passed '{ data: Readonly<{ kind: \"area\"; data: readonly SingleValueSeriesDatum[]; options?: Readonly<{ color?: Color | undefined; lastPriceAnimation?: \"continuous\" | \"disabled\" | undefined; markers?: readonly SeriesMarker[] | undefined; }> | undefined; }>; options: Readonly<...>; title: Element; toolbarOptions: { ...; }; }'."
+    assert.equals(expected_message, bm.best_message(original_message))
+  end)
 end)
 
 describe("Handles links", function()
