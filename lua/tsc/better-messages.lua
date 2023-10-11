@@ -102,24 +102,24 @@ local function match_slots(original_message, md_original_message)
   local char_idx = 1
   while char_idx < original_message:len() do
     local div_str = dividing_strings[dividing_str_idx]
-    local test_str = original_message:sub(char_idx, char_idx + div_str:len()- 1)
+    local test_str = original_message:sub(char_idx, char_idx + div_str:len() - 1)
     if test_str == div_str then
       if slot:len() > 0 then
         local zero_idx_div_str_idx = dividing_str_idx - 2
-        local key = "{".. zero_idx_div_str_idx .."}"
+        local key = "{" .. zero_idx_div_str_idx .. "}"
         matched_slots[key] = slot
         slot = ""
       end
       char_idx = char_idx + div_str:len()
       dividing_str_idx = dividing_str_idx + 1
     else
-      slot = slot .. original_message:sub(char_idx,char_idx)
+      slot = slot .. original_message:sub(char_idx, char_idx)
       char_idx = char_idx + 1
     end
   end
   if slot:len() > 0 then
     local zero_idx_div_str_idx = dividing_str_idx - 2
-    local key = "{".. zero_idx_div_str_idx .."}"
+    local key = "{" .. zero_idx_div_str_idx .. "}"
     matched_slots[key] = slot
   end
   return matched_slots
