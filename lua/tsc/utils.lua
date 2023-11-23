@@ -68,7 +68,7 @@ M.parse_tsc_output = function(output)
     return { errors = errors, files = files }
   end
 
-  for _, line in ipairs(output) do
+   for _, line in ipairs(output) do
     local filename, lineno, colno, message = line:match("^(.+)%((%d+),(%d+)%)%s*:%s*(.+)$")
     if filename ~= nil then
       table.insert(errors, {
@@ -95,6 +95,8 @@ M.set_qflist = function(errors, opts)
   vim.fn.setqflist({}, "r", { title = "TSC", items = errors })
 
   if #errors > 0 and final_opts.auto_open then
+    local win = vim.api.nvim_get_current_win()
+
     vim.cmd("copen")
 
     if not final_opts.auto_focus then

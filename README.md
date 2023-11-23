@@ -1,4 +1,5 @@
 # tsc.nvim
+
 <img width="569" alt="image" src="https://user-images.githubusercontent.com/2755722/233876554-efb9cfe6-c038-46c8-a7cb-b7a4aa9eac5b.png">
 
 This Neovim plugin provides an asynchronous interface to run project-wide TypeScript type-checking using the TypeScript compiler (`tsc`). It displays the type-checking results in a quickfix list and provides visual notifications about the progress and completion of type-checking.
@@ -80,13 +81,14 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
     project = function()
       return utils.find_nearest_tsconfig()
     end,
+    watch = false,
   },
   hide_progress_notifications_from_history = true,
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
 }
 ```
 
-With this configuration, you can use keys for flag names and their corresponding values to enable/disable the flag (in the case of `noEmit = true`) or provide a function (as in the case of the `project`). This makes the configuration more explicit and easier to read. Additionally, the flags option is backwards compatible and can accept a string value if you prefer a simpler configuration:
+With this configuration, you can use keys for flag names and their corresponding values to enable/disable the flag (in the case of `noEmit = true`), provide a function (as in the case of the `project`) or enable watch mode. This makes the configuration more explicit and easier to read. Additionally, the flags option is backwards compatible and can accept a string value if you prefer a simpler configuration:
 
 ```lua
 flags = "--noEmit",
