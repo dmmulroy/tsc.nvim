@@ -68,7 +68,7 @@ M.parse_tsc_output = function(output)
     return { errors = errors, files = files }
   end
 
-   for _, line in ipairs(output) do
+  for _, line in ipairs(output) do
     local filename, lineno, colno, message = line:match("^(.+)%((%d+),(%d+)%)%s*:%s*(.+)$")
     if filename ~= nil then
       table.insert(errors, {

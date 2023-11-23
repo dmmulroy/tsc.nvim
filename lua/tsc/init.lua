@@ -105,13 +105,9 @@ M.run = function()
   end
 
   local function notify_watch_mode()
-    notify_record = vim.notify(
-      "👀 Watching your project for changes, kick back and relax 🚀",
-      nil,
-      {
-          title = "TSC",
-      }
-    )
+    notify_record = vim.notify("👀 Watching your project for changes, kick back and relax 🚀", nil, {
+      title = "TSC",
+    })
   end
 
   if config.enable_progress_notifications then
@@ -127,13 +123,17 @@ M.run = function()
     errors = result.errors
     files_with_errors = result.files
 
-    utils.set_qflist(errors, { auto_open = config.auto_open_qflist, auto_close = config.auto_close_qflist, auto_focus = not config.flags.watch })
+    utils.set_qflist(errors, {
+      auto_open = config.auto_open_qflist,
+      auto_close = config.auto_close_qflist,
+      auto_focus = not config.flags.watch,
+    })
   end
 
   local total_output = {}
 
   local function watch_on_stdout(_, output)
-    for _,v in ipairs(output) do
+    for _, v in ipairs(output) do
       table.insert(total_output, v)
     end
 
