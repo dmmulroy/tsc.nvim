@@ -9,17 +9,18 @@ if success then
   nvim_notify = pcall_result
 end
 
+local DEFAULT_FLAGS = {
+  noEmit = true,
+  project = utils.find_nearest_tsconfig(),
+  watch = false,
+}
+
 local DEFAULT_CONFIG = {
   auto_open_qflist = true,
   auto_close_qflist = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
-  flags = {
-    noEmit = true,
-    project = function()
-      return utils.find_nearest_tsconfig()
-    end,
-  },
+  flags = DEFAULT_FLAGS,
   hide_progress_notifications_from_history = true,
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
 }
@@ -105,8 +106,18 @@ M.run = function()
     vim.defer_fn(notify, 125)
   end
 
+  local function notify_watch_mode()
+    notify_record = vim.notify(
+      "TSC: 👀 Watching your project for changes, kick back and relax 🚀"
+    )
+  end
+
   if config.enable_progress_notifications then
-    notify()
+    if config.flags.watch then
+      notify_watch_mode()
+    else
+      notify()
+    end
   end
 
   local function on_stdout(_, output)
@@ -115,7 +126,7 @@ M.run = function()
     errors = result.errors
     files_with_errors = result.files
 
-    utils.set_qflist(errors, { auto_open = config.auto_open_qflist, auto_close = config.auto_close_qflist })
+    utils.set_qflist(errors, { auto_open = config.auto_open_qflist, auto_close = config.auto_close_qflist, auto_focus = not config.flags.watch })
   end
 
   local on_exit = function()
@@ -154,7 +165,13 @@ M.run = function()
     stdout_buffered = true,
   }
 
-  vim.fn.jobstart(tsc .. " " .. utils.parse_flags(config.flags), opts)
+  if config.flags.watch then
+    opts.stdout_buffered = false
+  end
+
+  local final_flags = vim.tbl_extend("force", DEFAULT_FLAGS, config.flags or {})
+
+  vim.fn.jobstart(tsc .. " " .. utils.parse_flags(final_flags), opts)
 end
 
 function M.is_running()
@@ -167,6 +184,10 @@ function M.setup(opts)
   vim.api.nvim_create_user_command("TSC", function()
     M.run()
   end, { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true })
+
+  if config.flags.watch and config.flags.project then
+    M.run()
+  end
 end
 
 return M

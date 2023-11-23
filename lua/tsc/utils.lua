@@ -96,6 +96,10 @@ M.set_qflist = function(errors, opts)
 
   if #errors > 0 and final_opts.auto_open then
     vim.cmd("copen")
+
+    if not final_opts.auto_focus then
+      vim.api.nvim_set_current_win(win)
+    end
   elseif #errors == 0 and final_opts.auto_close then
     vim.cmd("cclose")
   end
