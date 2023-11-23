@@ -105,9 +105,8 @@ M.run = function()
   end
 
   local function notify_watch_mode()
-    notify_record = vim.notify("👀 Watching your project for changes, kick back and relax 🚀", nil, {
-      title = "TSC",
-    })
+    notify_record =
+      vim.notify("👀 Watching your project for changes, kick back and relax 🚀", nil, get_notify_options())
   end
 
   if config.enable_progress_notifications then
