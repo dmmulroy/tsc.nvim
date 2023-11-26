@@ -1,3 +1,5 @@
+local better_messages = require("tsc.better-messages")
+
 local M = {}
 
 M.is_executable = function(cmd)
@@ -60,7 +62,7 @@ M.parse_flags = function(flags)
   return parsed_flags
 end
 
-M.parse_tsc_output = function(output)
+M.parse_tsc_output = function(output, config)
   local errors = {}
   local files = {}
 
@@ -71,11 +73,15 @@ M.parse_tsc_output = function(output)
   for _, line in ipairs(output) do
     local filename, lineno, colno, message = line:match("^(.+)%((%d+),(%d+)%)%s*:%s*(.+)$")
     if filename ~= nil then
+      local text = message
+      if config.pretty_errors then
+        text = better_messages.translate(message)
+      end
       table.insert(errors, {
         filename = filename,
         lnum = tonumber(lineno),
         col = tonumber(colno),
-        text = message,
+        text = text,
         type = "E",
       })
 

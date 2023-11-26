@@ -21,6 +21,7 @@ local DEFAULT_CONFIG = {
   },
   hide_progress_notifications_from_history = true,
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
+  pretty_errors = true,
 }
 
 local DEFAULT_NOTIFY_OPTIONS = {
@@ -118,7 +119,8 @@ M.run = function()
   end
 
   local function on_stdout(_, output)
-    local result = utils.parse_tsc_output(output)
+    local result = utils.parse_tsc_output(output, config)
+
     errors = result.errors
     files_with_errors = result.files
 
