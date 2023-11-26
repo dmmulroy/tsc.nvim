@@ -16,7 +16,9 @@ local DEFAULT_CONFIG = {
   enable_progress_notifications = true,
   flags = {
     noEmit = true,
-    project = utils.find_nearest_tsconfig(),
+    project = function()
+      return utils.find_nearest_tsconfig()
+    end,
     watch = false,
   },
   hide_progress_notifications_from_history = true,
