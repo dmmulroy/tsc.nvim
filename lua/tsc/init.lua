@@ -13,6 +13,7 @@ local DEFAULT_CONFIG = {
   auto_open_qflist = true,
   auto_close_qflist = false,
   auto_focus_qflist = false,
+  auto_start_watch_mode = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
   flags = {
@@ -204,8 +205,14 @@ function M.setup(opts)
     M.run()
   end, { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true })
 
-  if config.flags.watch and config.flags.project then
-    M.run()
+  if config.auto_start_watch_mode and config.flags.watch then
+    vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+      pattern = "*.{ts,tsx}",
+      desc = "Start tsc.nvim in watch mode automatically when opening a TypeScript file",
+      callback = function()
+        M.run()
+      end,
+    })
   end
 end
 
