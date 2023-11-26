@@ -22,7 +22,7 @@ local DEFAULT_CONFIG = {
   },
   hide_progress_notifications_from_history = true,
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
-  pretty_errors = false,
+  pretty_errors = true,
 }
 
 local DEFAULT_NOTIFY_OPTIONS = {
