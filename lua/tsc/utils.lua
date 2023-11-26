@@ -75,7 +75,7 @@ M.parse_tsc_output = function(output, config)
     if filename ~= nil then
       local text = message
       if config.pretty_errors then
-        text = better_messages.best_message(message)
+        text = better_messages.translate(message)
       end
       table.insert(errors, {
         filename = filename,

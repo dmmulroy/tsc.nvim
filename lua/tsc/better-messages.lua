@@ -90,14 +90,10 @@ M.translate = function(message)
   local error_num, original_message = message:match("^.*TS(%d+):%s(.*)")
   local improved_text_file = get_error_markdown_file(error_num)
   if improved_text_file == nil then
-    print("No improved text file found for error " .. error_num)
     return message
   end
-  print("Found improved text file for error " .. error_num)
 
   local parsed = parse_md(improved_text_file)
-
-  print("parsed: " .. vim.inspect(parsed))
 
   local params = get_params(parsed["original"])
 
