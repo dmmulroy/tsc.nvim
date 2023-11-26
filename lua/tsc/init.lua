@@ -12,6 +12,7 @@ end
 local DEFAULT_CONFIG = {
   auto_open_qflist = true,
   auto_close_qflist = false,
+  auto_focus_qflist = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
   flags = {
@@ -129,7 +130,7 @@ M.run = function()
     utils.set_qflist(errors, {
       auto_open = config.auto_open_qflist,
       auto_close = config.auto_close_qflist,
-      auto_focus = not config.flags.watch,
+      auto_focus = config.auto_focus_qflist,
     })
   end
 

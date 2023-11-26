@@ -74,6 +74,7 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
 {
   auto_open_qflist = true,
   auto_close_qflist = false,
+  auto_focus_qflist = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
   flags = {
