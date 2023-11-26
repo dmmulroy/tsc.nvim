@@ -1,129 +1,114 @@
+-- Module M for better error message handling
 local M = {}
 
---- Gets a pointer to the improved text file, if it exists. Not every error
---- requires additional description.
---- @param error_num string: the original compiler message to parse
---- @return file* | nil
-local function get_improved_text_file(error_num)
+-- Regex pattern for capturing numbered parameters like {0}, {1}, etc.
+local parameter_regex = "({%d})"
+
+-- Extracts parameter placeholders from a given error template.
+-- @param error_template string: The template string containing parameter placeholders.
+-- @return table: A list of all parameter placeholders found in the template.
+local function get_params(error_template)
+  local params = {}
+  for param in error_template:gmatch(parameter_regex) do
+    table.insert(params, param)
+  end
+  return params
+end
+
+-- Extracts quoted strings from a given message.
+-- @param message string: The message string containing quoted parts.
+-- @return table: A list of all quoted strings found in the message.
+local function get_matches(message)
+  local matches = {}
+
+  for match in string.gmatch(message, "'(.-)'") do
+    table.insert(matches, match)
+  end
+
+  return matches
+end
+
+-- Constructs a better error message by replacing placeholders in the template with actual values.
+-- @param error_msg string: The original error message.
+-- @param error_template string: The error template with placeholders.
+-- @param better_error_template string: The improved error message template.
+-- @return string: The improved error message, or original if replacement isn't possible.
+local function better_error_message(error_msg, error_template, better_error_template)
+  local matches = get_matches(error_msg)
+  local params = get_params(error_template)
+
+  if #params ~= #matches then
+    return error_msg
+  end
+
+  local better_error = better_error_template
+
+  for i = 1, #params do
+    better_error = better_error:gsub(params[i], matches[i])
+  end
+
+  return better_error
+end
+
+-- Retrieves a markdown file associated with a specific error number.
+-- @param error_num string: The error number identifier.
+-- @return file* | nil: The file pointer to the markdown file, if exists.
+local function get_error_markdown_file(error_num)
   local filename = error_num .. ".md"
   local plugin_path = vim.fn.fnamemodify(debug.getinfo(1).source:sub(2), ":p:h")
   return io.open(plugin_path .. "/better-messages/" .. filename, "r")
 end
 
---- Removes link text from the string, keeping those with relevant text.
---- @param line string
---- @return string
-local function parse_out_links(line)
-  local link_re = "%[(.+)%]%((.+)%)"
-  local link_start, link_end, match = line:find(link_re)
-  if link_start == nil or link_end == nil then
-    return line
-  end
+-- Parses a markdown file to extract 'original' and 'better' content.
+-- @param markdown file*: The markdown file pointer.
+-- @return table: A table with 'original' and 'better' keys containing extracted contents.
+local function parse_md(markdown)
+  local contents = markdown:read("*all")
+  markdown:close()
 
-  if match == "Learn more" then
-    return line:sub(0, link_start - 2)
-  end
+  -- First, remove the leading and trailing '---'
+  local trimmedMarkdown = contents:gsub("^%-%-%-%s*", ""):gsub("%s*%-%-%-$", "")
 
-  if match == "This article" then
-    local sentence_end = line:find("%.", link_end)
-    if sentence_end == nil then
-      return line:sub(0, link_start - 2) .. line:sub(link_end)
-    end
-    return line:sub(0, link_start - 2) .. line:sub(sentence_end + 1)
-  end
+  -- Split the remaining content at the '---' separator
+  local originalContent, betterContent = trimmedMarkdown:match("^(.-)%s*%-%-%-%s*(.-)$")
 
-  return line:sub(0, link_start - 1) .. match .. line:sub(link_end + 1)
+  -- Trim whitespace from both contents
+  originalContent = originalContent:gsub('^original:%s*"(.-)"%s*$', "%1")
+  betterContent = betterContent:gsub("^%s*(.-)%s*$", "%1")
+
+  -- Return the table with the extracted contents
+  return {
+    original = originalContent,
+    better = betterContent,
+  }
 end
 
---- @class MDFile
---- @field frontmatter table<string, string>
---- @field body string
-
---- Returns a markdown file object with frontmatter and content
---- @param md_file file*
---- @return MDFile
-local function parse_md_simple(md_file)
-  local md = { frontmatter = {}, body = "" }
-  local in_frontmatter = false
-  for l in md_file:lines("l") do
-    if not in_frontmatter and l == "---" then
-      in_frontmatter = true
-      goto continue
-    elseif in_frontmatter and l == "---" then
-      in_frontmatter = false
-      goto continue
-    elseif in_frontmatter then
-      local sep_idx = l:find(":")
-      local key = l:sub(0, sep_idx - 1)
-      local val = l:sub(sep_idx + 3, l:len() - 1)
-      md.frontmatter[key] = val
-    else
-      md.body = md.body .. parse_out_links(l)
-    end
-    ::continue::
-  end
-
-  return md
-end
-
---- Get any slots out of the improved text for matching.
---- @param md MDFile
-local function get_improved_text_slots(md)
-  local slots = {}
-  --- @type integer | nil
-  local i = 0
-  while true do
-    i = md.body:find("%{%d%}", i + 1)
-    if i == nil then
-      break
-    end
-    local val = md.body:sub(i, i + 2)
-    table.insert(slots, val)
-  end
-  return slots
-end
-
---- Match a slot with the text from the original message
---- @param slots table<integer, string>
---- @param original_message string
---- @param md_original_message string
---- @return table<string, string>
-local function match_slots(slots, original_message, md_original_message)
-  local matched_slots = {}
-  for i = 1, #slots do
-    local idx = md_original_message:find(slots[i])
-    local match = original_message:match("%w+", idx)
-    matched_slots[slots[i]] = match
-  end
-  return matched_slots
-end
-
---- Finds and parses a preferred message md file, or returns the existing if no
---- preferred message is available.
---- @param message string: the original compiler message to parse
---- @return string
-M.best_message = function(message)
+-- Attempt to translate a given compiler message into a better one.
+-- @param message string: The original compiler message to parse.
+-- @return string: The improved or original error message.
+M.translate = function(message)
   local error_num, original_message = message:match("^.*TS(%d+):%s(.*)")
-  local improved_text_file = get_improved_text_file(error_num)
+  local improved_text_file = get_error_markdown_file(error_num)
   if improved_text_file == nil then
+    print("No improved text file found for error " .. error_num)
     return message
   end
+  print("Found improved text file for error " .. error_num)
 
-  local md = parse_md_simple(improved_text_file)
+  local parsed = parse_md(improved_text_file)
 
-  local slots = get_improved_text_slots(md)
-  if #slots == 0 then
-    return "TS" .. error_num .. ": " .. md.body
+  print("parsed: " .. vim.inspect(parsed))
+
+  local params = get_params(parsed["original"])
+
+  if #params == 0 then
+    return "TS" .. error_num .. ": " .. parsed.body
   end
 
-  local matched_slots = match_slots(slots, original_message, md.frontmatter["original"])
+  local better_error = better_error_message(original_message, parsed["original"], parsed["better"])
 
-  local output_message = md.body
-  for k, v in pairs(matched_slots) do
-    output_message = output_message:gsub(k, v)
-  end
-
-  return "TS" .. error_num .. ": " .. output_message
+  return "TS" .. error_num .. ": " .. better_error
 end
 
+-- Returning the module M.
 return M
