@@ -1,4 +1,5 @@
 # tsc.nvim
+
 <img width="569" alt="image" src="https://user-images.githubusercontent.com/2755722/233876554-efb9cfe6-c038-46c8-a7cb-b7a4aa9eac5b.png">
 
 This Neovim plugin provides an asynchronous interface to run project-wide TypeScript type-checking using the TypeScript compiler (`tsc`). It displays the type-checking results in a quickfix list and provides visual notifications about the progress and completion of type-checking.
@@ -65,6 +66,8 @@ require('tsc').setup()
 
 To run TypeScript type-checking, execute the `:TSC` command in Neovim. The plugin will display a progress notification while the type-checking is in progress. When the type-checking is complete, it will show a notification with the results and open a quickfix list if there are any errors.
 
+If `watch` mode is enabled, tsc.nvim will automatically run in the background every time you save in a typescript or tsx file and report the results back to you. In addition, if `auto_start_watch_mode` is enabled, the `:TSC` command will be executed on your behalf when you enter a typescript or tsx files.
+
 ## Configuration
 
 By default, the plugin uses the default `tsc` command with the `--noEmit` flag to avoid generating output files during type-checking. It also emulates the default tsc behavior of performing a backward search from the current directory for a `tsconfig` file. The flags option can accept both a string and a table. Here's the default configuration:
@@ -73,6 +76,8 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
 {
   auto_open_qflist = true,
   auto_close_qflist = false,
+  auto_focus_qflist = false,
+  auto_start_watch_mode = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
   flags = {
@@ -80,13 +85,15 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
     project = function()
       return utils.find_nearest_tsconfig()
     end,
+    watch = false,
   },
   hide_progress_notifications_from_history = true,
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
+  pretty_errors = true,
 }
 ```
 
-With this configuration, you can use keys for flag names and their corresponding values to enable/disable the flag (in the case of `noEmit = true`) or provide a function (as in the case of the `project`). This makes the configuration more explicit and easier to read. Additionally, the flags option is backwards compatible and can accept a string value if you prefer a simpler configuration:
+With this configuration, you can use keys for flag names and their corresponding values to enable/disable the flag (in the case of `noEmit = true`), provide a function (as in the case of the `project`) or enable watch mode. This makes the configuration more explicit and easier to read. Additionally, the flags option is backwards compatible and can accept a string value if you prefer a simpler configuration:
 
 ```lua
 flags = "--noEmit",
@@ -94,7 +101,7 @@ flags = "--noEmit",
 
 ## FAQs
 
-### I'm using `nvim-notify` and being spammed by progress notifcations, what's going on?
+### I'm using `nvim-notify` and being spammed by progress notifications, what's going on?
 
 It's likely that the overwritten default `vim.notify` function isn't returning `nvim-notify`'s notification record, which is used to replace the existing notification. Make sure that you're nvim-notify configuration looks something like this:
 
