@@ -101,7 +101,13 @@ M.set_qflist = function(errors, opts)
   vim.fn.setqflist({}, "r", { title = "TSC", items = errors })
 
   if #errors > 0 and final_opts.auto_open then
+    local win = vim.api.nvim_get_current_win()
+
     vim.cmd("copen")
+
+    if not final_opts.auto_focus then
+      vim.api.nvim_set_current_win(win)
+    end
   elseif #errors == 0 and final_opts.auto_close then
     vim.cmd("cclose")
   end

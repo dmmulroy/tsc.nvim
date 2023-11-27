@@ -12,6 +12,8 @@ end
 local DEFAULT_CONFIG = {
   auto_open_qflist = true,
   auto_close_qflist = false,
+  auto_focus_qflist = false,
+  auto_start_watch_mode = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
   flags = {
@@ -19,6 +21,7 @@ local DEFAULT_CONFIG = {
     project = function()
       return utils.find_nearest_tsconfig()
     end,
+    watch = false,
   },
   hide_progress_notifications_from_history = true,
   spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
@@ -60,7 +63,7 @@ M.run = function()
   local files_with_errors = {}
   local notify_record
   local notify_called = false
-  local spinner_idx = 0
+  local spinner_idx = 1
 
   if not utils.is_executable(tsc) then
     vim.notify(
@@ -106,8 +109,16 @@ M.run = function()
     vim.defer_fn(notify, 125)
   end
 
+  local function notify_watch_mode()
+    vim.notify("👀 Watching your project for changes, kick back and relax 🚀", nil, get_notify_options())
+  end
+
   if config.enable_progress_notifications then
-    notify()
+    if config.flags.watch then
+      notify_watch_mode()
+    else
+      notify()
+    end
   end
 
   local function on_stdout(_, output)
@@ -116,11 +127,11 @@ M.run = function()
     errors = result.errors
     files_with_errors = result.files
 
-    utils.set_qflist(errors, { auto_open = config.auto_open_qflist, auto_close = config.auto_close_qflist })
-  end
-
-  local on_exit = function()
-    is_running = false
+    utils.set_qflist(errors, {
+      auto_open = config.auto_open_qflist,
+      auto_close = config.auto_close_qflist,
+      auto_focus = config.auto_focus_qflist,
+    })
 
     if not config.enable_progress_notifications then
       return
@@ -149,11 +160,35 @@ M.run = function()
     )
   end
 
+  local total_output = {}
+
+  local function watch_on_stdout(_, output)
+    for _, v in ipairs(output) do
+      table.insert(total_output, v)
+    end
+
+    for _, value in pairs(output) do
+      if string.find(value, "Watching for file changes") then
+        on_stdout(_, total_output)
+        total_output = {}
+      end
+    end
+  end
+
+  local on_exit = function()
+    is_running = false
+  end
+
   local opts = {
     on_stdout = on_stdout,
     on_exit = on_exit,
     stdout_buffered = true,
   }
+
+  if config.flags.watch then
+    opts.stdout_buffered = false
+    opts.on_stdout = watch_on_stdout
+  end
 
   vim.fn.jobstart(tsc .. " " .. utils.parse_flags(config.flags), opts)
 end
@@ -168,6 +203,26 @@ function M.setup(opts)
   vim.api.nvim_create_user_command("TSC", function()
     M.run()
   end, { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true })
+
+  if config.flags.watch then
+    vim.api.nvim_create_autocmd("BufWritePre", {
+      pattern = "*.{ts,tsx}",
+      desc = "Run tsc.nvim in watch mode automatically when saving a TypeScript file",
+      callback = function()
+        vim.notify("Type-checking your project via watch mode, hang tight 🚀", nil, get_notify_options())
+      end,
+    })
+
+    if config.auto_start_watch_mode then
+      vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+        pattern = "*.{ts,tsx}",
+        desc = "Start tsc.nvim in watch mode automatically when opening a TypeScript file",
+        callback = function()
+          M.run()
+        end,
+      })
+    end
+  end
 end
 
 return M
