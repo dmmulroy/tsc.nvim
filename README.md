@@ -106,7 +106,7 @@ flags = "--noEmit",
 It's likely that the overwritten default `vim.notify` function isn't returning `nvim-notify`'s notification record, which is used to replace the existing notification. Make sure that you're nvim-notify configuration looks something like this:
 
 ```lua
-require('notify')
+local notify = require('notify')
 
 vim.notify = function(message, level, opts)
   return notify(message, level, opts) -- <-- Important to return the value from `nvim-notify`
