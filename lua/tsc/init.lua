@@ -14,6 +14,7 @@ local DEFAULT_CONFIG = {
   auto_close_qflist = false,
   auto_focus_qflist = false,
   auto_start_watch_mode = false,
+  use_trouble_qflist = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
   flags = {
@@ -131,6 +132,7 @@ M.run = function()
       auto_open = config.auto_open_qflist,
       auto_close = config.auto_close_qflist,
       auto_focus = config.auto_focus_qflist,
+      use_trouble = config.use_trouble_qflist,
     })
 
     if not config.enable_progress_notifications then
@@ -203,6 +205,14 @@ function M.setup(opts)
   vim.api.nvim_create_user_command("TSC", function()
     M.run()
   end, { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true })
+
+  vim.api.nvim_create_user_command("TSCOpen", function()
+    utils.open_qflist(config.use_trouble_qflist, config.auto_focus_qflist)
+  end, { desc = "Open the results in a qflist", force = true })
+
+  vim.api.nvim_create_user_command("TSCClose", function()
+    utils.close_qflist(config.use_trouble_qflist)
+  end, { desc = "Close the results qflist", force = true })
 
   if config.flags.watch then
     vim.api.nvim_create_autocmd("BufWritePre", {
