@@ -1,5 +1,8 @@
 local better_messages = require("tsc.better-messages")
 
+local has_trouble, pcall_trouble = pcall(require, "trouble")
+local trouble = has_trouble and pcall_trouble or nil
+
 local M = {}
 
 M.is_executable = function(cmd)
@@ -95,20 +98,51 @@ M.parse_tsc_output = function(output, config)
 end
 
 M.set_qflist = function(errors, opts)
-  local DEFAULT_OPTS = { auto_open = true, auto_close = false }
+  local DEFAULT_OPTS = { auto_open = true, auto_close = false, use_trouble = false }
   local final_opts = vim.tbl_extend("force", DEFAULT_OPTS, opts or {})
 
   vim.fn.setqflist({}, "r", { title = "TSC", items = errors })
 
   if #errors > 0 and final_opts.auto_open then
-    local win = vim.api.nvim_get_current_win()
+    M.open_qflist(final_opts.use_trouble, final_opts.auto_focus)
+  end
 
-    vim.cmd("copen")
-
-    if not final_opts.auto_focus then
-      vim.api.nvim_set_current_win(win)
+  if #errors == 0 then
+    -- trouble needs to be refreshed when list is empty.
+    if final_opts.use_trouble and trouble ~= nil then
+      trouble.refresh()
     end
-  elseif #errors == 0 and final_opts.auto_close then
+
+    if final_opts.auto_close then
+      M.close_qflist(final_opts.use_trouble)
+    end
+  end
+end
+
+--- open the qflist
+--- @param use_trouble boolean: if trouble should be used as qflist provider
+--- @param auto_focus boolean: if the qflist should be focused on open
+--- @return nil
+M.open_qflist = function(use_trouble, auto_focus)
+  local win = vim.api.nvim_get_current_win()
+  if use_trouble and trouble ~= nil then
+    trouble.open("quickfix")
+  else
+    vim.cmd("copen")
+  end
+
+  if not auto_focus then
+    vim.api.nvim_set_current_win(win)
+  end
+end
+
+--- close the qflist
+--- @param use_trouble boolean: if trouble should be used as qflist provider
+--- @return nil
+M.close_qflist = function(use_trouble)
+  if use_trouble and trouble ~= nil then
+    trouble.close()
+  else
     vim.cmd("cclose")
   end
 end

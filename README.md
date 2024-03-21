@@ -78,6 +78,7 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
   auto_close_qflist = false,
   auto_focus_qflist = false,
   auto_start_watch_mode = false,
+  use_trouble_qflist = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
   flags = {
@@ -97,6 +98,26 @@ With this configuration, you can use keys for flag names and their corresponding
 
 ```lua
 flags = "--noEmit",
+```
+
+## Manual Opening and Closing the Quickfix List
+
+There are two user commands you can use to open and close the quickfix list:
+
+`TSCOpen` - open the quickfix list
+`TSCClose` - close the quickfix list
+
+These commands will respect your configuration options:
+
+- `auto_open_qflist`
+- `auto_close_qflist`
+- `use_trouble_qflist`
+
+### Example key maps:
+
+```lua
+vim.keymap.set('n', '<leader>to', ':TSCOpen<CR>')
+vim.keymap.set('n', '<leader>tc', ':TSCClose<CR>')
 ```
 
 ## FAQs
@@ -127,6 +148,18 @@ require('tsc').setup({
 ```
 
 With this configuration, tsc.nvim will typecheck all projects in the monorepo, taking into account project references and incremental builds.
+
+### Can I use `Trouble` for the quickfix list?
+
+Yes, as long as you have the plugin installed you can set `use_trouble_qflist = true` in the configuration.
+
+```lua
+require('tsc').setup({
+    use_trouble_qflist = true,
+})
+```
+
+This will use Trouble for the quickfix list. This will work with all other options such as `auto_open_qflist`, `auto_close_qflist`, `auto_focus_qflist`.
 
 ## Contributing
 
