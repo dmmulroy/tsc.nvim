@@ -19,9 +19,7 @@ local DEFAULT_CONFIG = {
   enable_progress_notifications = true,
   flags = {
     noEmit = true,
-    project = function()
-      return utils.find_nearest_tsconfig()
-    end,
+    project = nil,
     watch = false,
   },
   hide_progress_notifications_from_history = true,
@@ -35,7 +33,7 @@ local DEFAULT_NOTIFY_OPTIONS = {
 }
 
 local config = {}
-local is_running = false
+local running_PIDs = {}
 
 local function get_notify_options(...)
   local overrides = {}
@@ -78,15 +76,15 @@ M.run = function()
     return
   end
 
-  if is_running then
+  config.flags.project = utils.find_nearest_tsconfig()
+
+  if M.is_running(config.flags.project) then
     vim.notify(format_notification_msg("Type-checking already in progress"), vim.log.levels.WARN, get_notify_options())
     return
   end
 
-  is_running = true
-
   local function notify()
-    if not is_running then
+    if not M.is_running(config.flags.project) then
       return
     end
 
@@ -177,13 +175,15 @@ M.run = function()
     end
   end
 
-  local on_exit = function()
-    is_running = false
+  local on_exit = function(project)
+    running_PIDs[project] = nil
   end
 
   local opts = {
     on_stdout = on_stdout,
-    on_exit = on_exit,
+    on_exit = function()
+      on_exit(config.flags.project)
+    end,
     stdout_buffered = true,
   }
 
@@ -192,11 +192,17 @@ M.run = function()
     opts.on_stdout = watch_on_stdout
   end
 
-  vim.fn.jobstart(tsc .. " " .. utils.parse_flags(config.flags), opts)
+  running_PIDs[config.flags.project] = vim.fn.jobstart(tsc .. " " .. utils.parse_flags(config.flags), opts)
 end
 
-function M.is_running()
-  return is_running
+function M.is_running(project)
+  return running_PIDs[project] ~= nil
+end
+
+M.stop = function()
+  for _, pid in pairs(running_PIDs) do
+    vim.fn.jobstop(pid)
+  end
 end
 
 function M.setup(opts)
@@ -205,6 +211,10 @@ function M.setup(opts)
   vim.api.nvim_create_user_command("TSC", function()
     M.run()
   end, { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true })
+
+  vim.api.nvim_create_user_command("TSCStop", function()
+    M.stop()
+  end, { desc = "stop running `tsc`", force = true })
 
   vim.api.nvim_create_user_command("TSCOpen", function()
     utils.open_qflist(config.use_trouble_qflist, config.auto_focus_qflist)

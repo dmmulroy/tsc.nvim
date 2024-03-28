@@ -68,6 +68,8 @@ To run TypeScript type-checking, execute the `:TSC` command in Neovim. The plugi
 
 If `watch` mode is enabled, tsc.nvim will automatically run in the background every time you save in a typescript or tsx file and report the results back to you. In addition, if `auto_start_watch_mode` is enabled, the `:TSC` command will be executed on your behalf when you enter a typescript or tsx files.
 
+To stop any running `:TSC` command, use the `:TSCStop` command in Neovim.
+
 ## Configuration
 
 By default, the plugin uses the default `tsc` command with the `--noEmit` flag to avoid generating output files during type-checking. It also emulates the default tsc behavior of performing a backward search from the current directory for a `tsconfig` file. The flags option can accept both a string and a table. Here's the default configuration:
