@@ -79,7 +79,6 @@ M.run = function()
   config.flags.project = utils.find_nearest_tsconfig()
 
   if M.is_running(config.flags.project) then
-    vim.notify(format_notification_msg("Type-checking already in progress"), vim.log.levels.WARN, get_notify_options())
     return
   end
 
@@ -209,6 +208,14 @@ function M.setup(opts)
   config = vim.tbl_deep_extend("force", config, DEFAULT_CONFIG, opts or {})
 
   vim.api.nvim_create_user_command("TSC", function()
+    if M.is_running(config.flags.project) then
+      vim.notify(
+        format_notification_msg("Type-checking already in progress"),
+        vim.log.levels.WARN,
+        get_notify_options()
+      )
+      return
+    end
     M.run()
   end, { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true })
 
