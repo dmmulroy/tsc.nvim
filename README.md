@@ -81,6 +81,7 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
   auto_focus_qflist = false,
   auto_start_watch_mode = false,
   use_trouble_qflist = false,
+  use_as_monorepo = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
   flags = {
@@ -139,13 +140,11 @@ end
 
 ### Why doesn't tsc.nvim typecheck my entire monorepo?
 
-In a monorepo setup, tsc.nvim only typechecks the project associated with the nearest `tsconfig.json` by default. If you need to typecheck across all projects in the monorepo, you must change the flags configuration option in the setup function to include `--build`. The `--build` flag instructs TypeScript to typecheck all referenced projects, taking into account project references and incremental builds for better management of dependencies and build performance. Your adjusted setup function should look like this:
+By default, the plugin will check only the nearest `tsconfig` file. If you would like it to use all `tsconfig` files in the current working directory, set `use_as_monorepo = true`. All other options will work as usual such as `auto_start_watch_mode`, `flags.watch`, etc.
 
 ```lua
 require('tsc').setup({
-  flags = {
-    build = true,
-  },
+    use_as_monorepo = true,
 })
 ```
 
