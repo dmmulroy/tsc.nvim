@@ -140,7 +140,7 @@ end
 
 ### Why doesn't tsc.nvim typecheck my entire monorepo?
 
-By default, the plugin will check only the nearest `tsconfig` file. If you would like it to use all `tsconfig` files in the current working directory, set `use_as_monorepo = true`. All other options will work as usual such as `auto_start_watch_mode`, `flags.watch`, etc.
+By default, tsc.nvim will check only the nearest `tsconfig` file. If you would like it to use all `tsconfig` files in the current working directory, set `use_as_monorepo = true`. All other options will work as usual such as `auto_start_watch_mode`, `flags.watch`, etc.
 
 ```lua
 require('tsc').setup({
