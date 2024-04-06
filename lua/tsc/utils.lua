@@ -30,9 +30,9 @@ M.find_tsconfigs = function(run_mono_repo)
 
   local found_configs = nil
   if M.is_executable("rg") then
-    found_configs = vim.fn.system("rg -g '!node_modules' --files | rg tsconfig")
+    found_configs = vim.fn.system("rg -g '!node_modules' --files | rg 'tsconfig.*.json'")
   else
-    found_configs = vim.fn.system('find . -name "tsconfig*" -type f')
+    found_configs = vim.fn.system('find . -not -path "*/node_modules/*" -name "tsconfig.*.json" -type f')
   end
 
   if found_configs == nil then
