@@ -9,6 +9,20 @@ if success then
   nvim_notify = pcall_result
 end
 
+--- @class Opts
+--- @field auto_open_qflist boolean - (false) When true the quick fix list will automatically open when errors are found
+--- @field auto_close_qflist boolean - (false) When true the quick fix list will automatically close when no errors are found
+--- @field auto_focus_qflist boolean - (false) When true the quick fix list will automatically focus when errors are found
+--- @field auto_start_watch_mode boolean - (false) When true the `tsc` process will be started in watch mode when a typescript buffer is opened
+--- @field use_trouble_qflist boolean - (false) When true the quick fix list will be opened in Trouble if it is installed
+--- @field run_as_monorepo boolean - (false) When true the `tsc` process will be started mode for each tsconfig in the current working directory
+--- @field bin_path string - Path to the tsc binary if it is not in the projects node_modules or globally
+--- @field enable_progress_notifications boolean - (true) When false progress notifications will not be shown
+--- @field hide_progress_notifications_from_history boolean - (true) When true progress notifications will be hidden from history
+--- @field spinner string[] - ({"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}) - The spinner characters to use
+--- @field pretty_errors boolean - (true) When true errors will be formatted with `pretty`
+--- @field flags { [string]: boolean }
+
 local DEFAULT_CONFIG = {
   auto_open_qflist = true,
   auto_close_qflist = false,
@@ -17,11 +31,10 @@ local DEFAULT_CONFIG = {
   use_trouble_qflist = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
+  run_as_monorepo = false,
   flags = {
     noEmit = true,
-    project = function()
-      return utils.find_nearest_tsconfig()
-    end,
+    project = nil,
     watch = false,
   },
   hide_progress_notifications_from_history = true,
@@ -34,8 +47,12 @@ local DEFAULT_NOTIFY_OPTIONS = {
   hide_from_history = false,
 }
 
-local config = {}
-local is_running = false
+local config = {} ---@type Opts
+
+--- Storage for each running tsc process
+--- @type {[string]:{pid: number, errors: table }}
+local running_processes = {}
+local running_count = 0
 
 local function get_notify_options(...)
   local overrides = {}
@@ -78,20 +95,43 @@ M.run = function()
     return
   end
 
-  if is_running then
+  local configs_to_run = utils.find_tsconfigs(config.run_as_monorepo)
+
+  if #configs_to_run > 0 and not config.run_as_monorepo then
+    M.stop()
+  end
+
+  for i, k in pairs(configs_to_run) do
+    if running_processes[k] ~= nil then
+      configs_to_run[i] = nil
+    end
+  end
+
+  if #configs_to_run > 20 then
+    vim.notify_once("Too many tsconfigs found: " .. #configs_to_run, vim.log.levels.ERROR, get_notify_options())
+    return
+  end
+
+  if not config.flags.watch and #configs_to_run == 0 then
     vim.notify(format_notification_msg("Type-checking already in progress"), vim.log.levels.WARN, get_notify_options())
     return
   end
 
-  is_running = true
+  running_count = #configs_to_run
 
   local function notify()
-    if not is_running then
+    if running_count == 0 then
       return
     end
 
     notify_record = vim.notify(
-      format_notification_msg("Type-checking your project, kick back and relax 🚀", spinner_idx),
+      format_notification_msg(
+        (
+          config.flags.watch and "👀 Watching your project for changes"
+          or "Type-checking your project" .. (running_count > 0 and "s" or "")
+        ) .. ", kick back and relax 🚀",
+        spinner_idx
+      ),
       nil,
       get_notify_options(
         (notify_record and { replace = notify_record.id }),
@@ -110,23 +150,25 @@ M.run = function()
     vim.defer_fn(notify, 125)
   end
 
-  local function notify_watch_mode()
-    vim.notify("👀 Watching your project for changes, kick back and relax 🚀", nil, get_notify_options())
+  if config.enable_progress_notifications and not notify_called then
+    notify()
   end
 
-  if config.enable_progress_notifications then
-    if config.flags.watch then
-      notify_watch_mode()
-    else
-      notify()
+  local function create_output()
+    running_count = running_count - 1
+    if running_count > 0 then
+      return
     end
-  end
 
-  local function on_stdout(_, output)
-    local result = utils.parse_tsc_output(output, config)
+    running_count = 0
+    notify_called = false
+    errors = {}
 
-    errors = result.errors
-    files_with_errors = result.files
+    for _, process in pairs(running_processes) do
+      for _, error in ipairs(process.errors) do
+        table.insert(errors, error)
+      end
+    end
 
     utils.set_qflist(errors, {
       auto_open = config.auto_open_qflist,
@@ -158,53 +200,104 @@ M.run = function()
         string.format("Type-checking complete. Found %s errors across %s files 💥", #errors, #files_with_errors)
       ),
       vim.log.levels.ERROR,
-      get_notify_options()
+      get_notify_options((notify_record and { overwrite = notify_record.id }))
     )
+  end
+
+  local function on_stdout(output, project)
+    local result = utils.parse_tsc_output(output, config)
+
+    running_processes[project].errors = result.errors
+
+    for _, v in ipairs(result.files) do
+      table.insert(files_with_errors, v)
+    end
   end
 
   local total_output = {}
 
-  local function watch_on_stdout(_, output)
+  local function watch_on_stdout(output, project)
     for _, v in ipairs(output) do
       table.insert(total_output, v)
     end
 
     for _, value in pairs(output) do
       if string.find(value, "Watching for file changes") then
-        on_stdout(_, total_output)
+        on_stdout(total_output, project)
         total_output = {}
+        create_output()
       end
     end
   end
 
   local on_exit = function()
-    is_running = false
+    if config.flags.watch then
+      return
+    end
+
+    create_output()
+    if running_count == 0 then
+      running_processes = {}
+    end
   end
 
-  local opts = {
-    on_stdout = on_stdout,
-    on_exit = on_exit,
-    stdout_buffered = true,
-  }
-
-  if config.flags.watch then
-    opts.stdout_buffered = false
-    opts.on_stdout = watch_on_stdout
+  local opts = function(project)
+    return {
+      on_stdout = function(_, output)
+        on_stdout(output, project)
+      end,
+      on_exit = function()
+        on_exit()
+      end,
+      stdout_buffered = true,
+    }
   end
 
-  vim.fn.jobstart(tsc .. " " .. utils.parse_flags(config.flags), opts)
+  for _, project in ipairs(configs_to_run) do
+    local project_opts = opts(project)
+
+    if config.flags.watch then
+      project_opts.stdout_buffered = false
+      project_opts.on_stdout = function(_, output)
+        watch_on_stdout(output, project)
+      end
+    end
+
+    vim.schedule(function()
+      running_processes[project] = {
+        pid = vim.fn.jobstart(
+          tsc .. " " .. utils.parse_flags(vim.tbl_extend("force", config.flags, { project = project })),
+          project_opts
+        ),
+        errors = {},
+      }
+    end)
+  end
 end
 
-function M.is_running()
-  return is_running
+function M.is_running(project)
+  return running_processes[project] ~= nil
 end
 
+M.stop = function()
+  for _, process in pairs(running_processes) do
+    vim.fn.jobstop(process.pid)
+    running_processes = {}
+  end
+end
+
+--- @param opts Opts
 function M.setup(opts)
   config = vim.tbl_deep_extend("force", config, DEFAULT_CONFIG, opts or {})
 
   vim.api.nvim_create_user_command("TSC", function()
     M.run()
   end, { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true })
+
+  vim.api.nvim_create_user_command("TSCStop", function()
+    M.stop()
+    vim.notify_once(format_notification_msg("TSC stopped"), nil, get_notify_options())
+  end, { desc = "stop running `tsc`", force = true })
 
   vim.api.nvim_create_user_command("TSCOpen", function()
     utils.open_qflist(config.use_trouble_qflist, config.auto_focus_qflist)

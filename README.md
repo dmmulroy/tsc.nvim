@@ -68,6 +68,8 @@ To run TypeScript type-checking, execute the `:TSC` command in Neovim. The plugi
 
 If `watch` mode is enabled, tsc.nvim will automatically run in the background every time you save in a typescript or tsx file and report the results back to you. In addition, if `auto_start_watch_mode` is enabled, the `:TSC` command will be executed on your behalf when you enter a typescript or tsx files.
 
+To stop any running `:TSC` command, use the `:TSCStop` command in Neovim.
+
 ## Configuration
 
 By default, the plugin uses the default `tsc` command with the `--noEmit` flag to avoid generating output files during type-checking. It also emulates the default tsc behavior of performing a backward search from the current directory for a `tsconfig` file. The flags option can accept both a string and a table. Here's the default configuration:
@@ -79,6 +81,7 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
   auto_focus_qflist = false,
   auto_start_watch_mode = false,
   use_trouble_qflist = false,
+  run_as_monorepo = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
   flags = {
@@ -137,13 +140,11 @@ end
 
 ### Why doesn't tsc.nvim typecheck my entire monorepo?
 
-In a monorepo setup, tsc.nvim only typechecks the project associated with the nearest `tsconfig.json` by default. If you need to typecheck across all projects in the monorepo, you must change the flags configuration option in the setup function to include `--build`. The `--build` flag instructs TypeScript to typecheck all referenced projects, taking into account project references and incremental builds for better management of dependencies and build performance. Your adjusted setup function should look like this:
+By default, tsc.nvim will check only the nearest `tsconfig` file. If you would like it to use all `tsconfig` files in the current working directory, set `run_as_monorepo = true`. All other options will work as usual such as `auto_start_watch_mode`, `flags.watch`, etc.
 
 ```lua
 require('tsc').setup({
-  flags = {
-    build = true,
-  },
+    run_as_monorepo = true,
 })
 ```
 

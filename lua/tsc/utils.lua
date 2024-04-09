@@ -19,14 +19,42 @@ M.find_tsc_bin = function()
   return "tsc"
 end
 
+--- @param run_mono_repo boolean
+--- @return table<string>
+M.find_tsconfigs = function(run_mono_repo)
+  if not run_mono_repo then
+    return M.find_nearest_tsconfig()
+  end
+
+  local tsconfigs = {}
+
+  local found_configs = nil
+  if M.is_executable("rg") then
+    found_configs = vim.fn.system("rg -g '!node_modules' --files | rg 'tsconfig.*.json'")
+  else
+    found_configs = vim.fn.system('find . -not -path "*/node_modules/*" -name "tsconfig.*.json" -type f')
+  end
+
+  if found_configs == nil then
+    return {}
+  end
+
+  for s in found_configs:gmatch("[^\r\n]+") do
+    table.insert(tsconfigs, s)
+  end
+
+  assert(tsconfigs)
+  return tsconfigs
+end
+
 M.find_nearest_tsconfig = function()
   local tsconfig = vim.fn.findfile("tsconfig.json", ".;")
 
   if tsconfig ~= "" then
-    return tsconfig
+    return { tsconfig }
   end
 
-  return nil
+  return {}
 end
 
 M.parse_flags = function(flags)
@@ -107,12 +135,12 @@ M.set_qflist = function(errors, opts)
     M.open_qflist(final_opts.use_trouble, final_opts.auto_focus)
   end
 
-  if #errors == 0 then
-    -- trouble needs to be refreshed when list is empty.
-    if final_opts.use_trouble and trouble ~= nil then
-      trouble.refresh()
-    end
+  -- trouble needs to be refreshed when list is empty.
+  if final_opts.use_trouble and trouble ~= nil then
+    trouble.refresh()
+  end
 
+  if #errors == 0 then
     if final_opts.auto_close then
       M.close_qflist(final_opts.use_trouble)
     end
