@@ -263,12 +263,15 @@ M.run = function()
       end
     end
 
+    local flags = ""
+    if type(config.flags) == "string" then
+      flags = config.flags
+    else
+      flags = utils.parse_flags(vim.tbl_extend("force", config.flags, { project = project }))
+    end
     vim.schedule(function()
       running_processes[project] = {
-        pid = vim.fn.jobstart(
-          tsc .. " " .. utils.parse_flags(vim.tbl_extend("force", config.flags, { project = project })),
-          project_opts
-        ),
+        pid = vim.fn.jobstart(tsc .. " " .. flags, project_opts),
         errors = {},
       }
     end)
