@@ -181,6 +181,7 @@ M.run = function()
 
     if config.use_diagnostics then
       local namespace_id = vim.api.nvim_create_namespace("tsc_diagnostics")
+      vim.diagnostic.reset(namespace_id)
 
       for _, error in ipairs(errors) do
         local bufnr = vim.fn.bufnr(error.filename)
@@ -188,7 +189,15 @@ M.run = function()
           vim.notify("Buffer not found for " .. error.filename, vim.log.levels.ERROR, get_notify_options())
           return
         end
-        vim.diagnostic.set(namespace_id, bufnr, { error }, {})
+        local diagnostic = {
+          bufnr = bufnr,
+          lnum = error.lnum - 1,
+          col = error.col - 1,
+          severity = vim.diagnostic.severity.ERROR,
+          message = error.text,
+          source = "tsc",
+        }
+        vim.diagnostic.set(namespace_id, bufnr, { diagnostic }, {})
       end
     end
 
