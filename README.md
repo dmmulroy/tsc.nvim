@@ -62,6 +62,14 @@ To set up the plugin, add the following line to your `init.vim` or `init.lua` fi
 require('tsc').setup()
 ```
 
+For [yarn2](https://yarnpkg.com/) projects, you will need to generate the base SDK for handling typescript correctly:
+
+```bash
+yarn dlx @yarnpkg/sdks base
+```
+
+See [Editor SDKs](https://yarnpkg.com/getting-started/editor-sdks) for more information about configuring your IDE.
+
 ## Usage
 
 To run TypeScript type-checking, execute the `:TSC` command in Neovim. The plugin will display a progress notification while the type-checking is in progress. When the type-checking is complete, it will show a notification with the results and open a quickfix list if there are any errors.
