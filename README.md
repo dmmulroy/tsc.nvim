@@ -81,6 +81,7 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
   auto_focus_qflist = false,
   auto_start_watch_mode = false,
   use_trouble_qflist = false,
+  use_diagnostics = false,
   run_as_monorepo = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
@@ -161,6 +162,14 @@ require('tsc').setup({
 ```
 
 This will use Trouble for the quickfix list. This will work with all other options such as `auto_open_qflist`, `auto_close_qflist`, `auto_focus_qflist`.
+
+### Can it show the error list directly in my file explorer (like nvim-tree)
+
+Yes. As file explorers uses LSP diagnostics, you can use the `use_diagnostics` option in order to populate the diagnostics list as well as the quickfix list
+
+```
+use_diagnostics = true
+```
 
 ## Contributing
 
