@@ -339,7 +339,9 @@ function M.setup(opts)
       pattern = "*.{ts,tsx}",
       desc = "Run tsc.nvim in watch mode automatically when saving a TypeScript file",
       callback = function()
-        vim.notify("Type-checking your project via watch mode, hang tight 🚀", nil, get_notify_options())
+        if config.enable_progress_notifications then
+          vim.notify("Type-checking your project via watch mode, hang tight 🚀", nil, get_notify_options())
+        end
       end,
     })
 
