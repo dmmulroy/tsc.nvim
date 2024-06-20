@@ -19,6 +19,7 @@ end
 --- @field run_as_monorepo boolean - (false) When true the `tsc` process will be started mode for each tsconfig in the current working directory
 --- @field bin_path string - Path to the tsc binary if it is not in the projects node_modules or globally
 --- @field enable_progress_notifications boolean - (true) When false progress notifications will not be shown
+--- @field enable_error_notifications boolean - (true) When false error notifications will not be shown
 --- @field hide_progress_notifications_from_history boolean - (true) When true progress notifications will be hidden from history
 --- @field spinner string[] - ({"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}) - The spinner characters to use
 --- @field pretty_errors boolean - (true) When true errors will be formatted with `pretty`
@@ -33,6 +34,7 @@ local DEFAULT_CONFIG = {
   use_diagnostics = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
+  enable_error_notifications = true,
   run_as_monorepo = false,
   flags = {
     noEmit = true,
@@ -201,16 +203,18 @@ M.run = function()
       end
     end
 
-    if not config.enable_progress_notifications then
+    if #errors == 0 then
+      if config.enable_progress_notifications then
+        vim.notify(
+          format_notification_msg("Type-checking complete. No errors found 🎉"),
+          nil,
+          get_notify_options((notify_record and { replace = notify_record.id }))
+        )
+      end
       return
     end
 
-    if #errors == 0 then
-      vim.notify(
-        format_notification_msg("Type-checking complete. No errors found 🎉"),
-        nil,
-        get_notify_options((notify_record and { replace = notify_record.id }))
-      )
+    if not config.enable_error_notifications then
       return
     end
 
