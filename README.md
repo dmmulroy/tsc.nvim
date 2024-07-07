@@ -85,6 +85,7 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
   run_as_monorepo = false,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
+  enable_error_notifications = true,
   flags = {
     noEmit = true,
     project = function()
