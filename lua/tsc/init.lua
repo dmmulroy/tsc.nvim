@@ -10,20 +10,20 @@ if success then
 end
 
 --- @class Opts
---- @field auto_open_qflist boolean - (false) When true the quick fix list will automatically open when errors are found
---- @field auto_close_qflist boolean - (false) When true the quick fix list will automatically close when no errors are found
---- @field auto_focus_qflist boolean - (false) When true the quick fix list will automatically focus when errors are found
---- @field auto_start_watch_mode boolean - (false) When true the `tsc` process will be started in watch mode when a typescript buffer is opened
---- @field use_trouble_qflist boolean - (false) When true the quick fix list will be opened in Trouble if it is installed
---- @field use_diagnostics boolean - (false) When true the errors will be set as diagnostics
---- @field run_as_monorepo boolean - (false) When true the `tsc` process will be started mode for each tsconfig in the current working directory
---- @field bin_path string - Path to the tsc binary if it is not in the projects node_modules or globally
---- @field enable_progress_notifications boolean - (true) When false progress notifications will not be shown
---- @field enable_error_notifications boolean - (true) When false error notifications will not be shown
---- @field hide_progress_notifications_from_history boolean - (true) When true progress notifications will be hidden from history
---- @field spinner string[] - ({"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}) - The spinner characters to use
---- @field pretty_errors boolean - (true) When true errors will be formatted with `pretty`
---- @field flags { [string]: boolean }
+--- @field auto_open_qflist? boolean - (false) When true the quick fix list will automatically open when errors are found
+--- @field auto_close_qflist? boolean - (false) When true the quick fix list will automatically close when no errors are found
+--- @field auto_focus_qflist? boolean - (false) When true the quick fix list will automatically focus when errors are found
+--- @field auto_start_watch_mode? boolean - (false) When true the `tsc` process will be started in watch mode when a typescript buffer is opened
+--- @field use_trouble_qflist? boolean - (false) When true the quick fix list will be opened in Trouble if it is installed
+--- @field use_diagnostics? boolean - (false) When true the errors will be set as diagnostics
+--- @field run_as_monorepo? boolean - (false) When true the `tsc` process will be started mode for each tsconfig in the current working directory
+--- @field bin_path? string - Path to the tsc binary if it is not in the projects node_modules or globally
+--- @field enable_progress_notifications? boolean - (true) When false progress notifications will not be shown
+--- @field enable_error_notifications? boolean - (true) When false error notifications will not be shown
+--- @field hide_progress_notifications_from_history? boolean - (true) When true progress notifications will be hidden from history
+--- @field spinner? string[] - ({"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}) - The spinner characters to use
+--- @field pretty_errors? boolean - (true) When true errors will be formatted with `pretty`
+--- @field flags? { [string]: boolean }
 
 local DEFAULT_CONFIG = {
   auto_open_qflist = true,
