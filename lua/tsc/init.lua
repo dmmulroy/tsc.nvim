@@ -317,7 +317,7 @@ M.stop = function()
   end
 end
 
---- @param opts Opts
+--- @param opts Opts | nil
 function M.setup(opts)
   config = vim.tbl_deep_extend("force", config, DEFAULT_CONFIG, opts or {})
 
