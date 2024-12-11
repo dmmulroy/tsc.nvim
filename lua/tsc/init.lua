@@ -49,6 +49,7 @@ local DEFAULT_CONFIG = {
 local DEFAULT_NOTIFY_OPTIONS = {
   title = "TSC",
   hide_from_history = false,
+  id = "tsc.nvim",
 }
 
 local config = {} ---@type Opts
