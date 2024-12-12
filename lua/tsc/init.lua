@@ -17,7 +17,7 @@ end
 --- @field use_trouble_qflist? boolean - (false) When true the quick fix list will be opened in Trouble if it is installed
 --- @field use_diagnostics? boolean - (false) When true the errors will be set as diagnostics
 --- @field run_as_monorepo? boolean - (false) When true the `tsc` process will be started mode for each tsconfig in the current working directory
---- @field max_configs_to_run? number - (20) Will not run `tsc` if number of found tsconfig files in monorepo is greater.
+--- @field max_configs_to_run? number - (20) Will not run `tsc` if number of found tsconfig files is greater.
 --- @field bin_path? string - Path to the tsc binary if it is not in the projects node_modules or globally
 --- @field enable_progress_notifications? boolean - (true) When false progress notifications will not be shown
 --- @field enable_error_notifications? boolean - (true) When false error notifications will not be shown
