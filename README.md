@@ -83,6 +83,7 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
   use_trouble_qflist = false,
   use_diagnostics = false,
   run_as_monorepo = false,
+  max_configs_to_run = 20,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
   enable_error_notifications = true,
