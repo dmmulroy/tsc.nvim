@@ -10,7 +10,7 @@ M.is_executable = function(cmd)
 end
 
 M.find_tsc_bin = function()
-  local node_modules_tsc_binary = vim.fn.findfile("node_modules/.bin/tsc", ".;")
+  local node_modules_tsc_binary = vim.fn.findfile("node_modules/.bin/tsc", vim.fn.getcwd() .. ";")
 
   if node_modules_tsc_binary ~= "" then
     return node_modules_tsc_binary
@@ -48,7 +48,7 @@ M.find_tsconfigs = function(run_mono_repo)
 end
 
 M.find_nearest_tsconfig = function()
-  local tsconfig = vim.fn.findfile("tsconfig.json", ".;")
+  local tsconfig = vim.fn.findfile("tsconfig.json", vim.fn.getcwd() .. ";")
 
   if tsconfig ~= "" then
     return { tsconfig }
