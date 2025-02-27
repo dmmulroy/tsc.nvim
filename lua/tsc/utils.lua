@@ -48,7 +48,7 @@ M.find_tsconfigs = function(run_mono_repo)
 end
 
 M.find_nearest_tsconfig = function()
-  local tsconfig = vim.fn.findfile("tsconfig.json", vim.fn.getcwd() .. ";")
+  local tsconfig = vim.fn.findfile("tsconfig.json", ".;")
 
   if tsconfig ~= "" then
     return { tsconfig }
