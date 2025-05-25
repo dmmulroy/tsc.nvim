@@ -32,7 +32,7 @@ local DEFAULT_CONFIG = {
   auto_start_watch_mode = false,
   use_trouble_qflist = false,
   use_diagnostics = false,
-  bin_path = utils.find_tsc_bin(),
+  bin_path = nil,
   enable_progress_notifications = true,
   enable_error_notifications = true,
   run_as_monorepo = false,
@@ -81,7 +81,7 @@ end
 
 M.run = function()
   -- Closed over state
-  local tsc = config.bin_path
+  local tsc = config.bin_path or utils.find_tsc_bin()
   local errors = {}
   local files_with_errors = {}
   local notify_record
