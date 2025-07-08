@@ -1,372 +1,392 @@
-local success, pcall_result = pcall(require, "notify")
-local utils = require("tsc.utils")
+local Events = require('tsc.core.events')
+local ConfigManager = require('tsc.config')
+local PluginManager = require('tsc.plugins')
+local ProjectDiscovery = require('tsc.core.discovery')
+local Runner = require('tsc.core.runner')
 
-local M = {}
+---@class TSC
+---@field private _config ConfigManager
+---@field private _events Events
+---@field private _plugins PluginManager
+---@field private _discovery ProjectDiscovery
+---@field private _runner Runner
+---@field private _initialized boolean
+local TSC = {}
 
-local nvim_notify
-
-if success then
-  nvim_notify = pcall_result
+---Initialize tsc.nvim
+---@param opts? table Configuration options
+---@return TSC
+function TSC.setup(opts)
+  local self = {
+    _initialized = false,
+  }
+  
+  -- Initialize event system
+  self._events = Events.new()
+  
+  -- Initialize configuration manager
+  self._config = ConfigManager.new(opts)
+  
+  -- Initialize plugin manager
+  self._plugins = PluginManager.new(self._events, self._config)
+  
+  -- Initialize project discovery
+  local discovery_config = self._config:get_discovery_config()
+  self._discovery = ProjectDiscovery.new(discovery_config)
+  
+  -- Initialize runner
+  self._runner = Runner.new(self._config, self._events)
+  
+  -- Load plugins
+  self._plugins:load_all()
+  
+  -- Set up user commands
+  self:_setup_commands()
+  
+  -- Set up autocommands if needed
+  self:_setup_autocommands()
+  
+  -- Mark as initialized
+  self._initialized = true
+  
+  -- Emit initialized event
+  self._events:emit(Events.EVENTS.INITIALIZED, {
+    config = self._config:get_summary(),
+    plugins = self._plugins:get_stats(),
+  })
+  
+  return setmetatable(self, { __index = TSC })
 end
 
---- @class Opts
---- @field auto_open_qflist? boolean - (false) When true the quick fix list will automatically open when errors are found
---- @field auto_close_qflist? boolean - (false) When true the quick fix list will automatically close when no errors are found
---- @field auto_focus_qflist? boolean - (false) When true the quick fix list will automatically focus when errors are found
---- @field auto_start_watch_mode? boolean - (false) When true the `tsc` process will be started in watch mode when a typescript buffer is opened
---- @field use_trouble_qflist? boolean - (false) When true the quick fix list will be opened in Trouble if it is installed
---- @field use_diagnostics? boolean - (false) When true the errors will be set as diagnostics
---- @field run_as_monorepo? boolean - (false) When true the `tsc` process will be started mode for each tsconfig in the current working directory
---- @field max_tsconfig_files? number - (20) Will not run `tsc` if number of found tsconfig files is greater.
---- @field bin_path? string - Path to the tsc binary if it is not in the projects node_modules or globally
---- @field enable_progress_notifications? boolean - (true) When false progress notifications will not be shown
---- @field enable_error_notifications? boolean - (true) When false error notifications will not be shown
---- @field hide_progress_notifications_from_history? boolean - (true) When true progress notifications will be hidden from history
---- @field spinner? string[] - ({"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}) - The spinner characters to use
---- @field pretty_errors? boolean - (true) When true errors will be formatted with `pretty`
---- @field flags? { [string]: boolean }
-
-local DEFAULT_CONFIG = {
-  auto_open_qflist = true,
-  auto_close_qflist = false,
-  auto_focus_qflist = false,
-  auto_start_watch_mode = false,
-  use_trouble_qflist = false,
-  use_diagnostics = false,
-  bin_path = nil,
-  enable_progress_notifications = true,
-  enable_error_notifications = true,
-  run_as_monorepo = false,
-  max_tsconfig_files = 20,
-  flags = {
-    noEmit = true,
-    watch = false,
-  },
-  hide_progress_notifications_from_history = true,
-  spinner = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
-  pretty_errors = true,
-}
-
-local DEFAULT_NOTIFY_OPTIONS = {
-  title = "TSC",
-  hide_from_history = false,
-  id = "tsc.nvim",
-}
-
-local config = {} ---@type Opts
-
---- Storage for each running tsc process
---- @type {[string]:{pid: number, errors: table }}
-local running_processes = {}
-local running_count = 0
-
-local function get_notify_options(...)
-  local overrides = {}
-
-  for _, opts in ipairs({ ... }) do
-    for key, value in pairs(opts) do
-      overrides[key] = value
-    end
-  end
-
-  return vim.tbl_deep_extend("force", {}, DEFAULT_NOTIFY_OPTIONS, overrides)
-end
-
-local function format_notification_msg(msg, spinner_idx)
-  if spinner_idx == 0 or spinner_idx == nil then
-    return string.format(" %s ", msg)
-  end
-
-  return string.format(" %s %s ", config.spinner[spinner_idx], msg)
-end
-
-M.run = function()
-  -- Closed over state
-  local tsc = config.bin_path or utils.find_tsc_bin()
-  local errors = {}
-  local files_with_errors = {}
-  local notify_record
-  local notify_called = false
-  local spinner_idx = 1
-
-  if not utils.is_executable(tsc) then
-    vim.notify(
-      format_notification_msg(
-        "tsc was not available or found in your node_modules or $PATH. Please run install and try again."
-      ),
-      vim.log.levels.ERROR,
-      get_notify_options()
-    )
-
-    return
-  end
-
-  local configs_to_run = utils.find_tsconfigs(config.run_as_monorepo)
-
-  if #configs_to_run > 0 and not config.run_as_monorepo then
-    M.stop()
-  end
-
-  for i, k in pairs(configs_to_run) do
-    if running_processes[k] ~= nil then
-      configs_to_run[i] = nil
-    end
-  end
-
-  if #configs_to_run > config.max_tsconfig_files then
-    vim.notify_once("Too many tsconfigs found: " .. #configs_to_run, vim.log.levels.ERROR, get_notify_options())
-    return
-  end
-
-  if not config.flags.watch and #configs_to_run == 0 then
-    vim.notify(format_notification_msg("Type-checking already in progress"), vim.log.levels.WARN, get_notify_options())
-    return
-  end
-
-  running_count = #configs_to_run
-
-  local function notify()
-    if running_count == 0 then
-      return
-    end
-
-    notify_record = vim.notify(
-      format_notification_msg(
-        (
-          config.flags.watch and "👀 Watching your project for changes"
-          or "Type-checking your project" .. (running_count > 0 and "s" or "")
-        ) .. ", kick back and relax 🚀",
-        spinner_idx
-      ),
-      nil,
-      get_notify_options(
-        (notify_record and { replace = notify_record.id }),
-        (config.hide_progress_notifications_from_history and notify_called and { hide_from_history = true })
-      )
-    )
-
-    notify_called = true
-
-    spinner_idx = spinner_idx + 1
-
-    if spinner_idx > #config.spinner then
-      spinner_idx = 1
-    end
-
-    vim.defer_fn(notify, 125)
-  end
-
-  if config.enable_progress_notifications and not notify_called then
-    notify()
-  end
-
-  local function create_output()
-    running_count = running_count - 1
-    if running_count > 0 then
-      return
-    end
-
-    running_count = 0
-    notify_called = false
-    errors = {}
-
-    for _, process in pairs(running_processes) do
-      for _, error in ipairs(process.errors) do
-        table.insert(errors, error)
+---Set up user commands
+function TSC:_setup_commands()
+  -- Main TSC command
+  vim.api.nvim_create_user_command('TSC', function(cmd)
+    local opts = {}
+    
+    -- Parse command arguments
+    if cmd.args and cmd.args ~= '' then
+      -- Simple argument parsing for now
+      if cmd.args:match('watch') then
+        opts.watch = true
       end
     end
+    
+    self:run(opts)
+  end, {
+    desc = 'Run TypeScript type-checking',
+    nargs = '?',
+    complete = function()
+      return {'watch'}
+    end,
+  })
+  
+  -- Stop command
+  vim.api.nvim_create_user_command('TSCStop', function()
+    self:stop()
+  end, {
+    desc = 'Stop all TypeScript type-checking processes',
+  })
+  
+  -- Status command
+  vim.api.nvim_create_user_command('TSCStatus', function()
+    self:show_status()
+  end, {
+    desc = 'Show TypeScript type-checking status',
+  })
+  
+  -- Open quickfix command
+  vim.api.nvim_create_user_command('TSCOpen', function()
+    local quickfix_plugin = self._plugins:get('quickfix')
+    if quickfix_plugin then
+      quickfix_plugin:open()
+    end
+  end, {
+    desc = 'Open TypeScript errors in quickfix list',
+  })
+  
+  -- Close quickfix command
+  vim.api.nvim_create_user_command('TSCClose', function()
+    local quickfix_plugin = self._plugins:get('quickfix')
+    if quickfix_plugin then
+      quickfix_plugin:close()
+    end
+  end, {
+    desc = 'Close TypeScript errors quickfix list',
+  })
+  
+  -- Toggle quickfix command
+  vim.api.nvim_create_user_command('TSCToggle', function()
+    local quickfix_plugin = self._plugins:get('quickfix')
+    if quickfix_plugin then
+      quickfix_plugin:toggle()
+    end
+  end, {
+    desc = 'Toggle TypeScript errors quickfix list',
+  })
+end
 
-    utils.set_qflist(errors, {
-      auto_open = config.auto_open_qflist,
-      auto_close = config.auto_close_qflist,
-      auto_focus = config.auto_focus_qflist,
-      use_trouble = config.use_trouble_qflist,
+---Set up autocommands
+function TSC:_setup_autocommands()
+  -- Auto-start watch mode if configured
+  local watch_plugin = self._plugins:get('watch')
+  if watch_plugin and watch_plugin._config.auto_start then
+    vim.api.nvim_create_autocmd({'BufRead', 'BufNewFile'}, {
+      pattern = {'*.ts', '*.tsx'},
+      desc = 'Auto-start TypeScript watch mode',
+      callback = function()
+        self:run({watch = true})
+      end,
     })
-
-    if config.use_diagnostics then
-      local namespace_id = vim.api.nvim_create_namespace("tsc_diagnostics")
-      vim.diagnostic.reset(namespace_id)
-
-      for _, error in ipairs(errors) do
-        local bufnr = vim.fn.bufnr(error.filename)
-        if bufnr == -1 then
-          vim.notify("Buffer not found for " .. error.filename, vim.log.levels.ERROR, get_notify_options())
-          return
-        end
-        local diagnostic = {
-          bufnr = bufnr,
-          lnum = error.lnum - 1,
-          col = error.col - 1,
-          severity = vim.diagnostic.severity.ERROR,
-          message = error.text,
-          source = "tsc",
-        }
-        vim.diagnostic.set(namespace_id, bufnr, { diagnostic }, {})
-      end
-    end
-
-    if #errors == 0 then
-      if config.enable_progress_notifications then
-        vim.notify(
-          format_notification_msg("Type-checking complete. No errors found 🎉"),
-          nil,
-          get_notify_options((notify_record and { replace = notify_record.id }))
-        )
-      end
-      return
-    end
-
-    if not config.enable_error_notifications then
-      return
-    end
-
-    -- Clear any previous notifications if the user has nvim-notify installed
-    if nvim_notify ~= nil then
-      nvim_notify.dismiss()
-    end
-
-    vim.notify(
-      format_notification_msg(
-        string.format("Type-checking complete. Found %s errors across %s files 💥", #errors, #files_with_errors)
-      ),
-      vim.log.levels.ERROR,
-      get_notify_options((notify_record and { overwrite = notify_record.id }))
-    )
   end
+end
 
-  local function on_stdout(output, project)
-    local result = utils.parse_tsc_output(output, config)
-
-    running_processes[project].errors = result.errors
-
-    for _, v in ipairs(result.files) do
-      table.insert(files_with_errors, v)
-    end
+---Run TypeScript type-checking
+---@param opts? table Runtime options
+---@return string Run ID
+function TSC:run(opts)
+  if not self._initialized then
+    vim.notify('tsc.nvim not initialized. Call setup() first.', vim.log.levels.ERROR)
+    return ''
   end
-
-  local total_output = {}
-
-  local function watch_on_stdout(output, project)
-    for _, v in ipairs(output) do
-      table.insert(total_output, v)
-    end
-
-    for _, value in pairs(output) do
-      if string.find(value, "Watching for file changes") then
-        on_stdout(total_output, project)
-        total_output = {}
-        create_output()
-      end
-    end
+  
+  opts = opts or {}
+  
+  -- Emit run requested event
+  self._events:emit(Events.EVENTS.RUN_REQUESTED, {
+    opts = opts,
+  })
+  
+  -- Discover projects
+  local mode = opts.mode or self._config:get_mode()
+  local projects = self._discovery:find_projects(mode)
+  
+  if #projects == 0 then
+    vim.notify('No TypeScript projects found', vim.log.levels.WARN)
+    return ''
   end
+  
+  -- Emit project discovered event
+  self._events:emit(Events.EVENTS.PROJECT_DISCOVERED, {
+    projects = projects,
+    mode = mode,
+  })
+  
+  -- Run type-checking
+  local run_id = self._runner:run(projects, opts)
+  
+  return run_id
+end
 
-  local on_exit = function()
-    if config.flags.watch then
-      return
-    end
-
-    create_output()
-    if running_count == 0 then
-      running_processes = {}
-    end
+---Stop all running TypeScript processes
+---@return number Number of runs stopped
+function TSC:stop()
+  if not self._initialized then
+    vim.notify('tsc.nvim not initialized. Call setup() first.', vim.log.levels.ERROR)
+    return 0
   end
+  
+  local stopped = self._runner:stop_all()
+  
+  -- Emit stopped event
+  self._events:emit(Events.EVENTS.STOPPED, {
+    stopped_runs = stopped,
+  })
+  
+  return stopped
+end
 
-  local opts = function(project)
+---Get current status
+---@return table Status information
+function TSC:status()
+  if not self._initialized then
     return {
-      on_stdout = function(_, output)
-        on_stdout(output, project)
-      end,
-      on_exit = function()
-        on_exit()
-      end,
-      stdout_buffered = true,
+      initialized = false,
+      error = 'tsc.nvim not initialized',
     }
   end
+  
+  return {
+    initialized = true,
+    config = self._config:get_summary(),
+    plugins = self._plugins:get_stats(),
+    discovery = self._discovery:get_stats(),
+    runner = self._runner:get_stats(),
+  }
+end
 
-  for _, project in ipairs(configs_to_run) do
-    local project_opts = opts(project)
-
-    if config.flags.watch then
-      project_opts.stdout_buffered = false
-      project_opts.on_stdout = function(_, output)
-        watch_on_stdout(output, project)
-      end
-    end
-
-    -- Set working directory to project root if available
-    local project_root = utils.get_project_root(project)
-    if project_root then
-      project_opts.cwd = project_root
-    end
-
-    local flags = ""
-    if type(config.flags) == "string" then
-      flags = config.flags
-    else
-      flags = utils.parse_flags(vim.tbl_extend("force", config.flags, { project = project }))
-    end
-    vim.schedule(function()
-      running_processes[project] = {
-        pid = vim.fn.jobstart(tsc .. " " .. flags, project_opts),
-        errors = {},
-      }
-    end)
+---Show status in a formatted way
+function TSC:show_status()
+  local status = self:status()
+  
+  if not status.initialized then
+    vim.notify(status.error, vim.log.levels.ERROR)
+    return
   end
+  
+  local lines = {
+    'tsc.nvim Status:',
+    '',
+    string.format('Mode: %s', status.config.mode),
+    string.format('TypeScript Binary: %s', status.config.typescript_bin),
+    string.format('Flags: %s', status.config.typescript_flags),
+    string.format('Timeout: %dms', status.config.timeout),
+    '',
+    'Plugins:',
+    string.format('  Loaded: %d/%d', status.plugins.loaded, status.plugins.available),
+    string.format('  Enabled: %s', table.concat(status.plugins.loaded_plugins, ', ')),
+    '',
+    'Runner:',
+    string.format('  Active Runs: %d', status.runner.active_runs),
+    string.format('  Running Processes: %d', status.runner.running_processes),
+    '',
+    'Discovery:',
+    string.format('  Cache Entries: %d', status.discovery.cache_entries),
+    string.format('  Cached Projects: %d', status.discovery.total_cached_projects),
+  }
+  
+  vim.notify(table.concat(lines, '\n'), vim.log.levels.INFO)
 end
 
-function M.is_running(project)
-  return running_processes[project] ~= nil
-end
-
-M.stop = function()
-  for _, process in pairs(running_processes) do
-    vim.fn.jobstop(process.pid)
-    running_processes = {}
+---Get plugin instance for advanced usage
+---@param name string Plugin name
+---@return Plugin|nil Plugin instance
+function TSC:get_plugin(name)
+  if not self._initialized then
+    return nil
   end
+  
+  return self._plugins:get(name)
 end
 
---- @param opts Opts | nil
+---Update configuration at runtime
+---@param updates table Configuration updates
+---@return boolean success
+function TSC:update_config(updates)
+  if not self._initialized then
+    return false
+  end
+  
+  return self._config:update(updates)
+end
+
+---Get events system for advanced usage
+---@return Events
+function TSC:get_events()
+  return self._events
+end
+
+---Clean up resources
+function TSC:cleanup()
+  if not self._initialized then
+    return
+  end
+  
+  -- Stop all processes
+  self:stop()
+  
+  -- Unload all plugins
+  self._plugins:unload_all()
+  
+  -- Clear event listeners
+  self._events:clear()
+  
+  -- Clear discovery cache
+  self._discovery:clear_cache()
+  
+  self._initialized = false
+end
+
+-- Create default instance
+local default_instance = nil
+
+-- Module exports
+local M = {}
+
+---Setup tsc.nvim with configuration
+---@param opts? table Configuration options
+---@return TSC
 function M.setup(opts)
-  config = vim.tbl_deep_extend("force", config, DEFAULT_CONFIG, opts or {})
+  default_instance = TSC.setup(opts)
+  return default_instance
+end
 
-  vim.api.nvim_create_user_command("TSC", function()
-    M.run()
-  end, { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true })
+---Run TypeScript type-checking
+---@param opts? table Runtime options
+---@return string Run ID
+function M.run(opts)
+  if not default_instance then
+    vim.notify('tsc.nvim not initialized. Call setup() first.', vim.log.levels.ERROR)
+    return ''
+  end
+  
+  return default_instance:run(opts)
+end
 
-  vim.api.nvim_create_user_command("TSCStop", function()
-    M.stop()
-    vim.notify_once(format_notification_msg("TSC stopped"), nil, get_notify_options())
-  end, { desc = "stop running `tsc`", force = true })
+---Stop all running processes
+---@return number Number of runs stopped
+function M.stop()
+  if not default_instance then
+    return 0
+  end
+  
+  return default_instance:stop()
+end
 
-  vim.api.nvim_create_user_command("TSCOpen", function()
-    utils.open_qflist(config.use_trouble_qflist, config.auto_focus_qflist)
-  end, { desc = "Open the results in a qflist", force = true })
+---Get current status
+---@return table Status information
+function M.status()
+  if not default_instance then
+    return {
+      initialized = false,
+      error = 'tsc.nvim not initialized',
+    }
+  end
+  
+  return default_instance:status()
+end
 
-  vim.api.nvim_create_user_command("TSCClose", function()
-    utils.close_qflist(config.use_trouble_qflist)
-  end, { desc = "Close the results qflist", force = true })
+---Get plugin instance
+---@param name string Plugin name
+---@return Plugin|nil Plugin instance
+function M.get_plugin(name)
+  if not default_instance then
+    return nil
+  end
+  
+  return default_instance:get_plugin(name)
+end
 
-  if config.flags.watch then
-    vim.api.nvim_create_autocmd("BufWritePre", {
-      pattern = "*.{ts,tsx}",
-      desc = "Run tsc.nvim in watch mode automatically when saving a TypeScript file",
-      callback = function()
-        if config.enable_progress_notifications then
-          vim.notify("Type-checking your project via watch mode, hang tight 🚀", nil, get_notify_options())
-        end
-      end,
-    })
+---Update configuration
+---@param updates table Configuration updates
+---@return boolean success
+function M.update_config(updates)
+  if not default_instance then
+    return false
+  end
+  
+  return default_instance:update_config(updates)
+end
 
-    if config.auto_start_watch_mode then
-      vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-        pattern = "*.{ts,tsx}",
-        desc = "Start tsc.nvim in watch mode automatically when opening a TypeScript file",
-        callback = function()
-          M.run()
-        end,
-      })
-    end
+---Get events system
+---@return Events
+function M.get_events()
+  if not default_instance then
+    return nil
+  end
+  
+  return default_instance:get_events()
+end
+
+---Clean up resources
+function M.cleanup()
+  if default_instance then
+    default_instance:cleanup()
+    default_instance = nil
   end
 end
+
+-- Export constants
+M.EVENTS = Events.EVENTS
 
 return M
