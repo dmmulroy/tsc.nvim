@@ -68,6 +68,8 @@ To run TypeScript type-checking, execute the `:TSC` command in Neovim. The plugi
 
 If `watch` mode is enabled, tsc.nvim will automatically run in the background every time you save in a typescript or tsx file and report the results back to you. In addition, if `auto_start_watch_mode` is enabled, the `:TSC` command will be executed on your behalf when you enter a typescript or tsx files.
 
+To stop any running `:TSC` command, use the `:TSCStop` command in Neovim.
+
 ## Configuration
 
 By default, the plugin uses the default `tsc` command with the `--noEmit` flag to avoid generating output files during type-checking and `--color false` to ensure proper error parsing. It automatically performs a backward search from the current directory for a `tsconfig` file when no explicit project is configured. The flags option can accept both a string and a table. Here's the default configuration:
@@ -78,8 +80,13 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
   auto_close_qflist = false,
   auto_focus_qflist = false,
   auto_start_watch_mode = false,
+  use_trouble_qflist = false,
+  use_diagnostics = false,
+  run_as_monorepo = false,
+  max_tsconfig_files = 20,
   bin_path = utils.find_tsc_bin(),
   enable_progress_notifications = true,
+  enable_error_notifications = true,
   flags = {
     noEmit = true,
     watch = false,
@@ -94,6 +101,26 @@ With this configuration, you can use keys for flag names and their corresponding
 
 ```lua
 flags = "--noEmit",
+```
+
+## Manual Opening and Closing the Quickfix List
+
+There are two user commands you can use to open and close the quickfix list:
+
+`TSCOpen` - open the quickfix list
+`TSCClose` - close the quickfix list
+
+These commands will respect your configuration options:
+
+- `auto_open_qflist`
+- `auto_close_qflist`
+- `use_trouble_qflist`
+
+### Example key maps:
+
+```lua
+vim.keymap.set('n', '<leader>to', ':TSCOpen<CR>')
+vim.keymap.set('n', '<leader>tc', ':TSCClose<CR>')
 ```
 
 ## FAQs
@@ -113,17 +140,35 @@ end
 
 ### Why doesn't tsc.nvim typecheck my entire monorepo?
 
-In a monorepo setup, tsc.nvim only typechecks the project associated with the nearest `tsconfig.json` by default. If you need to typecheck across all projects in the monorepo, you must change the flags configuration option in the setup function to include `--build`. The `--build` flag instructs TypeScript to typecheck all referenced projects, taking into account project references and incremental builds for better management of dependencies and build performance. Your adjusted setup function should look like this:
+By default, tsc.nvim will check only the nearest `tsconfig` file. If you would like it to use all `tsconfig` files in the current working directory, set `run_as_monorepo = true`. All other options will work as usual such as `auto_start_watch_mode`, `flags.watch`, etc.
 
 ```lua
 require('tsc').setup({
-  flags = {
-    build = true,
-  },
+    run_as_monorepo = true,
 })
 ```
 
 With this configuration, tsc.nvim will typecheck all projects in the monorepo, taking into account project references and incremental builds.
+
+### Can I use `Trouble` for the quickfix list?
+
+Yes, as long as you have the plugin installed you can set `use_trouble_qflist = true` in the configuration.
+
+```lua
+require('tsc').setup({
+    use_trouble_qflist = true,
+})
+```
+
+This will use Trouble for the quickfix list. This will work with all other options such as `auto_open_qflist`, `auto_close_qflist`, `auto_focus_qflist`.
+
+### Can it show the error list directly in my file explorer (like nvim-tree)
+
+Yes. As file explorers uses LSP diagnostics, you can use the `use_diagnostics` option in order to populate the diagnostics list as well as the quickfix list
+
+```
+use_diagnostics = true
+```
 
 ## Contributing
 

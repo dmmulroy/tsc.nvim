@@ -10,7 +10,7 @@ describe("Auto-detection override fix", function()
     -- Mock find_nearest_tsconfig to return a test path
     local original_find_nearest_tsconfig = utils.find_nearest_tsconfig
     utils.find_nearest_tsconfig = function()
-      return "/test/path/tsconfig.json"
+      return {"/test/path/tsconfig.json"}
     end
     
     local result = utils.parse_flags(flags)
@@ -39,10 +39,10 @@ describe("Auto-detection override fix", function()
       watch = false,
     }
     
-    -- Mock find_nearest_tsconfig to return nil
+    -- Mock find_nearest_tsconfig to return empty array
     local original_find_nearest_tsconfig = utils.find_nearest_tsconfig
     utils.find_nearest_tsconfig = function()
-      return nil
+      return {}
     end
     
     local result = utils.parse_flags(flags)
@@ -103,7 +103,7 @@ describe("Working directory mismatch fix", function()
     vim.fn.findfile = original_findfile
     vim.fn.fnamemodify = original_fnamemodify
     
-    assert.equals("/absolute/path/tsconfig.json", result)
+    assert.equals("/absolute/path/tsconfig.json", result[1])
   end)
   
   it("get_project_root returns correct directory", function()

@@ -1,5 +1,8 @@
 local better_messages = require("tsc.better-messages")
 
+local has_trouble, pcall_trouble = pcall(require, "trouble")
+local trouble = has_trouble and pcall_trouble or nil
+
 local M = {}
 
 M.is_executable = function(cmd)
@@ -16,14 +19,42 @@ M.find_tsc_bin = function()
   return "tsc"
 end
 
+--- @param run_mono_repo boolean
+--- @return table<string>
+M.find_tsconfigs = function(run_mono_repo)
+  if not run_mono_repo then
+    return M.find_nearest_tsconfig()
+  end
+
+  local tsconfigs = {}
+
+  local found_configs = nil
+  if M.is_executable("rg") then
+    found_configs = vim.fn.system("rg -g '!node_modules' --files | rg 'tsconfig.*.json'")
+  else
+    found_configs = vim.fn.system('find . -not -path "*/node_modules/*" -name "tsconfig.*.json" -type f')
+  end
+
+  if found_configs == nil then
+    return {}
+  end
+
+  for s in found_configs:gmatch("[^\r\n]+") do
+    table.insert(tsconfigs, s)
+  end
+
+  assert(tsconfigs)
+  return tsconfigs
+end
+
 M.find_nearest_tsconfig = function()
   local tsconfig = vim.fn.findfile("tsconfig.json", ".;")
 
   if tsconfig ~= "" then
-    return vim.fn.fnamemodify(tsconfig, ":p")
+    return { vim.fn.fnamemodify(tsconfig, ":p") }
   end
 
-  return nil
+  return {}
 end
 
 M.get_project_root = function(tsconfig_path)
@@ -42,9 +73,9 @@ M.parse_flags = function(flags)
 
   -- Auto-detect project if not explicitly configured
   if not flags.project then
-    local nearest_tsconfig = M.find_nearest_tsconfig()
-    if nearest_tsconfig then
-      flags.project = nearest_tsconfig
+    local nearest_tsconfigs = M.find_nearest_tsconfig()
+    if #nearest_tsconfigs > 0 then
+      flags.project = nearest_tsconfigs[1]
     end
   end
   
@@ -115,20 +146,51 @@ M.parse_tsc_output = function(output, config)
 end
 
 M.set_qflist = function(errors, opts)
-  local DEFAULT_OPTS = { auto_open = true, auto_close = false }
+  local DEFAULT_OPTS = { auto_open = true, auto_close = false, use_trouble = false }
   local final_opts = vim.tbl_extend("force", DEFAULT_OPTS, opts or {})
 
   vim.fn.setqflist({}, "r", { title = "TSC", items = errors })
 
   if #errors > 0 and final_opts.auto_open then
-    local win = vim.api.nvim_get_current_win()
+    M.open_qflist(final_opts.use_trouble, final_opts.auto_focus)
+  end
 
-    vim.cmd("copen")
+  -- trouble needs to be refreshed when list is empty.
+  if final_opts.use_trouble and trouble ~= nil then
+    trouble.refresh()
+  end
 
-    if not final_opts.auto_focus then
-      vim.api.nvim_set_current_win(win)
+  if #errors == 0 then
+    if final_opts.auto_close then
+      M.close_qflist(final_opts.use_trouble)
     end
-  elseif #errors == 0 and final_opts.auto_close then
+  end
+end
+
+--- open the qflist
+--- @param use_trouble boolean: if trouble should be used as qflist provider
+--- @param auto_focus boolean: if the qflist should be focused on open
+--- @return nil
+M.open_qflist = function(use_trouble, auto_focus)
+  local win = vim.api.nvim_get_current_win()
+  if use_trouble and trouble ~= nil then
+    trouble.open("quickfix")
+  else
+    vim.cmd("copen")
+  end
+
+  if not auto_focus then
+    vim.api.nvim_set_current_win(win)
+  end
+end
+
+--- close the qflist
+--- @param use_trouble boolean: if trouble should be used as qflist provider
+--- @return nil
+M.close_qflist = function(use_trouble)
+  if use_trouble and trouble ~= nil then
+    trouble.close()
+  else
     vim.cmd("cclose")
   end
 end
