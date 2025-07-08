@@ -36,7 +36,7 @@ function Process.new(opts)
     cwd = opts.cwd or vim.fn.getcwd(),
     timeout = opts.timeout or 30000,
     job_id = nil,
-    status = 'pending',
+    status = "pending",
     stdout = {},
     stderr = {},
     exit_code = nil,
@@ -46,26 +46,26 @@ function Process.new(opts)
     _on_stderr = opts.on_stderr,
     _on_exit = opts.on_exit,
   }
-  
+
   return setmetatable(self, { __index = Process })
 end
 
 ---Start the process
 ---@return boolean success
 function Process:start()
-  if self.status ~= 'pending' then
+  if self.status ~= "pending" then
     return false
   end
-  
-  self.status = 'starting'
+
+  self.status = "starting"
   self.start_time = vim.loop.now()
-  
+
   -- Build command
   local cmd = self.command
   if #self.args > 0 then
-    cmd = cmd .. ' ' .. table.concat(self.args, ' ')
+    cmd = cmd .. " " .. table.concat(self.args, " ")
   end
-  
+
   -- Set up job options
   local job_opts = {
     cwd = self.cwd,
@@ -81,51 +81,51 @@ function Process:start()
     stdout_buffered = true,
     stderr_buffered = true,
   }
-  
+
   -- Start job
   self.job_id = vim.fn.jobstart(cmd, job_opts)
-  
+
   if self.job_id <= 0 then
-    self.status = 'failed'
+    self.status = "failed"
     self.end_time = vim.loop.now()
     return false
   end
-  
-  self.status = 'running'
-  
+
+  self.status = "running"
+
   -- Set up timeout
   if self.timeout > 0 then
     vim.defer_fn(function()
-      if self.status == 'running' then
+      if self.status == "running" then
         self:stop()
       end
     end, self.timeout)
   end
-  
+
   return true
 end
 
 ---Stop the process
 ---@return boolean success
 function Process:stop()
-  if self.status ~= 'running' then
+  if self.status ~= "running" then
     return false
   end
-  
+
   if self.job_id and self.job_id > 0 then
     vim.fn.jobstop(self.job_id)
-    self.status = 'stopped'
+    self.status = "stopped"
     self.end_time = vim.loop.now()
     return true
   end
-  
+
   return false
 end
 
 ---Check if process is running
 ---@return boolean
 function Process:is_running()
-  return self.status == 'running'
+  return self.status == "running"
 end
 
 ---Get process duration
@@ -157,11 +157,11 @@ end
 function Process:_handle_stdout(data)
   if data then
     for _, line in ipairs(data) do
-      if line ~= '' then
+      if line ~= "" then
         table.insert(self.stdout, line)
       end
     end
-    
+
     if self._on_stdout then
       self._on_stdout(data)
     end
@@ -173,11 +173,11 @@ end
 function Process:_handle_stderr(data)
   if data then
     for _, line in ipairs(data) do
-      if line ~= '' then
+      if line ~= "" then
         table.insert(self.stderr, line)
       end
     end
-    
+
     if self._on_stderr then
       self._on_stderr(data)
     end
@@ -188,9 +188,9 @@ end
 ---@param code number Exit code
 function Process:_handle_exit(code)
   self.exit_code = code
-  self.status = code == 0 and 'completed' or 'failed'
+  self.status = code == 0 and "completed" or "failed"
   self.end_time = vim.loop.now()
-  
+
   if self._on_exit then
     self._on_exit(code)
   end
@@ -215,12 +215,12 @@ end
 ---@return Process|nil
 function ProcessManager:start(opts)
   local process = Process.new(opts)
-  
+
   if process:start() then
     self._processes[process.id] = process
     return process
   end
-  
+
   return nil
 end
 
@@ -297,18 +297,18 @@ function ProcessManager:get_stats()
   local running = 0
   local completed = 0
   local failed = 0
-  
+
   for _, process in pairs(self._processes) do
     total = total + 1
-    if process.status == 'running' then
+    if process.status == "running" then
       running = running + 1
-    elseif process.status == 'completed' then
+    elseif process.status == "completed" then
       completed = completed + 1
-    elseif process.status == 'failed' then
+    elseif process.status == "failed" then
       failed = failed + 1
     end
   end
-  
+
   return {
     total = total,
     running = running,

@@ -14,20 +14,20 @@ Promise.__index = Promise
 ---@return Promise
 function M.promise(executor)
   local self = setmetatable({
-    _state = 'pending',
+    _state = "pending",
     _value = nil,
     _reason = nil,
     _callbacks = { resolved = {}, rejected = {} },
   }, Promise)
-  
+
   local function resolve(value)
-    if self._state ~= 'pending' then
+    if self._state ~= "pending" then
       return
-  end
-    
-    self._state = 'resolved'
+    end
+
+    self._state = "resolved"
     self._value = value
-    
+
     -- Execute resolved callbacks
     vim.schedule(function()
       for _, callback in ipairs(self._callbacks.resolved) do
@@ -35,15 +35,15 @@ function M.promise(executor)
       end
     end)
   end
-  
+
   local function reject(reason)
-    if self._state ~= 'pending' then
+    if self._state ~= "pending" then
       return
     end
-    
-    self._state = 'rejected'
+
+    self._state = "rejected"
     self._reason = reason
-    
+
     -- Execute rejected callbacks
     vim.schedule(function()
       for _, callback in ipairs(self._callbacks.rejected) do
@@ -51,13 +51,13 @@ function M.promise(executor)
       end
     end)
   end
-  
+
   -- Execute the executor
   local success, err = pcall(executor, resolve, reject)
   if not success then
     reject(err)
   end
-  
+
   return self
 end
 
@@ -74,19 +74,19 @@ function Promise:next(on_resolved)
         reject(result)
       end
     end
-    
-    if self._state == 'resolved' then
+
+    if self._state == "resolved" then
       vim.schedule(function()
         handle_resolved(self._value)
       end)
-    elseif self._state == 'pending' then
+    elseif self._state == "pending" then
       table.insert(self._callbacks.resolved, handle_resolved)
     end
-    
+
     -- Pass through rejections
-    if self._state == 'rejected' then
+    if self._state == "rejected" then
       reject(self._reason)
-    elseif self._state == 'pending' then
+    elseif self._state == "pending" then
       table.insert(self._callbacks.rejected, reject)
     end
   end)
@@ -105,19 +105,19 @@ function Promise:catch(on_rejected)
         reject(result)
       end
     end
-    
-    if self._state == 'rejected' then
+
+    if self._state == "rejected" then
       vim.schedule(function()
         handle_rejected(self._reason)
       end)
-    elseif self._state == 'pending' then
+    elseif self._state == "pending" then
       table.insert(self._callbacks.rejected, handle_rejected)
     end
-    
+
     -- Pass through resolutions
-    if self._state == 'resolved' then
+    if self._state == "resolved" then
       resolve(self._value)
-    elseif self._state == 'pending' then
+    elseif self._state == "pending" then
       table.insert(self._callbacks.resolved, resolve)
     end
   end)
@@ -127,13 +127,15 @@ end
 ---@param on_finally function Finally callback
 ---@return Promise
 function Promise:finally(on_finally)
-  return self:next(function(value)
-    on_finally()
-    return value
-  end):catch(function(reason)
-    on_finally()
-    error(reason)
-  end)
+  return self
+    :next(function(value)
+      on_finally()
+      return value
+    end)
+    :catch(function(reason)
+      on_finally()
+      error(reason)
+    end)
 end
 
 ---Create immediately resolved promise
@@ -162,21 +164,23 @@ function M.all(promises)
     local results = {}
     local resolved_count = 0
     local total = #promises
-    
+
     if total == 0 then
       resolve(results)
       return
     end
-    
+
     for i, promise in ipairs(promises) do
-      promise:next(function(value)
-        results[i] = value
-        resolved_count = resolved_count + 1
-        
-        if resolved_count == total then
-          resolve(results)
-        end
-      end):catch(reject)
+      promise
+        :next(function(value)
+          results[i] = value
+          resolved_count = resolved_count + 1
+
+          if resolved_count == total then
+            resolve(results)
+          end
+        end)
+        :catch(reject)
     end
   end)
 end
@@ -197,22 +201,22 @@ end
 ---@return function Async function
 function M.async(fn)
   return function(...)
-    local args = {...}
+    local args = { ... }
     local co = coroutine.create(fn)
-    
+
     local function step(...)
       local success, result = coroutine.resume(co, ...)
-      
+
       if not success then
         error(result)
       end
-      
-      if coroutine.status(co) == 'dead' then
+
+      if coroutine.status(co) == "dead" then
         return result
       end
-      
+
       -- Handle yielded promise
-      if type(result) == 'table' and result.next then
+      if type(result) == "table" and result.next then
         result:next(step):catch(function(err)
           coroutine.resume(co, nil, err)
         end)
@@ -223,7 +227,7 @@ function M.async(fn)
         end)
       end
     end
-    
+
     step(unpack(args))
   end
 end
@@ -256,7 +260,7 @@ function M.timeout(fn, timeout_ms)
   return M.race({
     M.promise(fn),
     M.sleep(timeout_ms):next(function()
-      error('Operation timed out')
+      error("Operation timed out")
     end),
   })
 end
@@ -267,14 +271,14 @@ end
 ---@return function Debounced function
 function M.debounce(fn, delay_ms)
   local timer = nil
-  
+
   return function(...)
-    local args = {...}
-    
+    local args = { ... }
+
     if timer then
       vim.fn.timer_stop(timer)
     end
-    
+
     timer = vim.fn.timer_start(delay_ms, function()
       timer = nil
       fn(unpack(args))
@@ -290,17 +294,17 @@ function M.throttle(fn, limit_ms)
   local last_call = 0
   local timer = nil
   local pending_args = nil
-  
+
   return function(...)
     local now = vim.loop.now()
     local time_since_last = now - last_call
-    
+
     if time_since_last >= limit_ms then
       last_call = now
       fn(...)
     else
-      pending_args = {...}
-      
+      pending_args = { ... }
+
       if not timer then
         local remaining = limit_ms - time_since_last
         timer = vim.fn.timer_start(remaining, function()
@@ -323,14 +327,14 @@ end
 function M.batch(fn, delay_ms)
   local batch = {}
   local timer = nil
-  
+
   return function(...)
-    table.insert(batch, {...})
-    
+    table.insert(batch, { ... })
+
     if timer then
       vim.fn.timer_stop(timer)
     end
-    
+
     timer = vim.fn.timer_start(delay_ms, function()
       timer = nil
       local current_batch = batch
@@ -345,22 +349,22 @@ end
 ---@return Promise
 function M.read_file_async(path)
   return M.promise(function(resolve, reject)
-    vim.loop.fs_open(path, 'r', 438, function(err, fd)
+    vim.loop.fs_open(path, "r", 438, function(err, fd)
       if err then
         reject(err)
         return
       end
-      
+
       vim.loop.fs_fstat(fd, function(err, stat)
         if err then
           vim.loop.fs_close(fd)
           reject(err)
           return
         end
-        
+
         vim.loop.fs_read(fd, stat.size, 0, function(err, data)
           vim.loop.fs_close(fd)
-          
+
           if err then
             reject(err)
           else
@@ -378,15 +382,15 @@ end
 ---@return Promise
 function M.write_file_async(path, data)
   return M.promise(function(resolve, reject)
-    vim.loop.fs_open(path, 'w', 438, function(err, fd)
+    vim.loop.fs_open(path, "w", 438, function(err, fd)
       if err then
         reject(err)
         return
       end
-      
+
       vim.loop.fs_write(fd, data, 0, function(err, bytes)
         vim.loop.fs_close(fd)
-        
+
         if err then
           reject(err)
         else
@@ -407,7 +411,7 @@ function M.readdir_async(path)
         reject(err)
         return
       end
-      
+
       local entries = {}
       while true do
         local name, type = vim.loop.fs_scandir_next(handle)
@@ -416,7 +420,7 @@ function M.readdir_async(path)
         end
         table.insert(entries, { name = name, type = type })
       end
-      
+
       resolve(entries)
     end)
   end)
@@ -428,18 +432,18 @@ function M.event_emitter()
   local emitter = {
     _listeners = {},
   }
-  
+
   function emitter:on(event, callback)
     if not self._listeners[event] then
       self._listeners[event] = {}
     end
     table.insert(self._listeners[event], callback)
-    
+
     return function()
       self:off(event, callback)
     end
   end
-  
+
   function emitter:off(event, callback)
     local listeners = self._listeners[event]
     if listeners then
@@ -451,7 +455,7 @@ function M.event_emitter()
       end
     end
   end
-  
+
   function emitter:emit(event, ...)
     local listeners = self._listeners[event]
     if listeners then
@@ -460,15 +464,12 @@ function M.event_emitter()
           callback(...)
           resolve()
         end):catch(function(err)
-          vim.notify(
-            string.format('Event handler error for %s: %s', event, err),
-            vim.log.levels.ERROR
-          )
+          vim.notify(string.format("Event handler error for %s: %s", event, err), vim.log.levels.ERROR)
         end)
       end
     end
   end
-  
+
   return emitter
 end
 
@@ -482,33 +483,35 @@ function M.parallel_limit(tasks, limit)
     local running = 0
     local index = 1
     local failed = false
-    
+
     local function run_next()
       if failed then
         return
       end
-      
+
       if index > #tasks and running == 0 then
         resolve(results)
         return
       end
-      
+
       while running < limit and index <= #tasks do
         local current_index = index
         index = index + 1
         running = running + 1
-        
-        M.promise(tasks[current_index]):next(function(result)
-          results[current_index] = result
-          running = running - 1
-          run_next()
-        end):catch(function(err)
-          failed = true
-          reject(err)
-        end)
+
+        M.promise(tasks[current_index])
+          :next(function(result)
+            results[current_index] = result
+            running = running - 1
+            run_next()
+          end)
+          :catch(function(err)
+            failed = true
+            reject(err)
+          end)
       end
     end
-    
+
     run_next()
   end)
 end

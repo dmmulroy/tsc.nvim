@@ -13,40 +13,40 @@ local QuickfixPlugin = {}
 ---@return QuickfixPlugin
 function QuickfixPlugin.new(events, config)
   local self = {
-    name = 'quickfix',
-    version = '3.0.0',
+    name = "quickfix",
+    version = "3.0.0",
     dependencies = {},
     enabled = true,
     _events = events,
-    _config = vim.tbl_deep_extend('force', {
+    _config = vim.tbl_deep_extend("force", {
       auto_open = true,
       auto_close = true,
       auto_focus = false,
-      title = 'TSC',
+      title = "TSC",
       max_height = 10,
       min_height = 3,
     }, config or {}),
   }
-  
+
   return setmetatable(self, { __index = QuickfixPlugin })
 end
 
 ---Initialize plugin
 function QuickfixPlugin:setup()
   -- Subscribe to completion events
-  self._events:on('tsc.completed', function(data)
+  self._events:on("tsc.completed", function(data)
     self:_handle_completion(data)
   end)
-  
+
   -- Subscribe to start events to optionally clear quickfix
-  self._events:on('tsc.started', function(data)
+  self._events:on("tsc.started", function(data)
     if self._config.clear_on_start then
       self:clear()
     end
   end)
-  
+
   -- Subscribe to stop events
-  self._events:on('tsc.stopped', function(data)
+  self._events:on("tsc.stopped", function(data)
     if self._config.clear_on_stop then
       self:clear()
     end
@@ -57,7 +57,7 @@ end
 ---@param data table Completion data
 function QuickfixPlugin:_handle_completion(data)
   local errors = data.errors or {}
-  
+
   -- Format errors for quickfix
   local qf_items = {}
   for _, error in ipairs(errors) do
@@ -70,10 +70,10 @@ function QuickfixPlugin:_handle_completion(data)
       valid = error.valid or 1,
     })
   end
-  
+
   -- Update quickfix list
   self:update(qf_items)
-  
+
   -- Handle auto open/close
   if #qf_items > 0 then
     if self._config.auto_open then
@@ -89,7 +89,7 @@ end
 ---Update quickfix list
 ---@param items table[] Quickfix items
 function QuickfixPlugin:update(items)
-  vim.fn.setqflist({}, 'r', {
+  vim.fn.setqflist({}, "r", {
     title = self._config.title,
     items = items,
   })
@@ -98,17 +98,14 @@ end
 ---Open quickfix list
 function QuickfixPlugin:open()
   local win = vim.api.nvim_get_current_win()
-  
+
   -- Calculate height
   local qf_size = vim.fn.len(vim.fn.getqflist())
-  local height = math.max(
-    self._config.min_height,
-    math.min(self._config.max_height, qf_size)
-  )
-  
+  local height = math.max(self._config.min_height, math.min(self._config.max_height, qf_size))
+
   -- Open quickfix
-  vim.cmd(string.format('copen %d', height))
-  
+  vim.cmd(string.format("copen %d", height))
+
   -- Handle auto focus
   if not self._config.auto_focus then
     vim.api.nvim_set_current_win(win)
@@ -117,19 +114,19 @@ end
 
 ---Close quickfix list
 function QuickfixPlugin:close()
-  vim.cmd('cclose')
+  vim.cmd("cclose")
 end
 
 ---Clear quickfix list
 function QuickfixPlugin:clear()
-  vim.fn.setqflist({}, 'r', { title = self._config.title })
+  vim.fn.setqflist({}, "r", { title = self._config.title })
 end
 
 ---Toggle quickfix list
 function QuickfixPlugin:toggle()
   -- Check if quickfix is open
-  local qf_winid = vim.fn.getqflist({winid = 0}).winid
-  
+  local qf_winid = vim.fn.getqflist({ winid = 0 }).winid
+
   if qf_winid > 0 then
     self:close()
   else
@@ -157,7 +154,7 @@ end
 ---Check if quickfix is open
 ---@return boolean
 function QuickfixPlugin:is_open()
-  local qf_winid = vim.fn.getqflist({winid = 0}).winid
+  local qf_winid = vim.fn.getqflist({ winid = 0 }).winid
   return qf_winid > 0
 end
 
@@ -165,7 +162,7 @@ end
 ---@return table Status information
 function QuickfixPlugin:get_status()
   local info = self:get_info()
-  
+
   return {
     is_open = self:is_open(),
     item_count = info.size,
@@ -178,14 +175,14 @@ end
 ---Update plugin configuration
 ---@param new_config table New configuration
 function QuickfixPlugin:update_config(new_config)
-  self._config = vim.tbl_deep_extend('force', self._config, new_config)
+  self._config = vim.tbl_deep_extend("force", self._config, new_config)
 end
 
 ---Clean up plugin resources
 function QuickfixPlugin:cleanup()
   -- Clear quickfix list
   self:clear()
-  
+
   -- No other cleanup needed as event listeners are automatically removed
 end
 

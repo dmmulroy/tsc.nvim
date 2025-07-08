@@ -15,17 +15,17 @@ local DiagnosticsPlugin = {}
 ---@return DiagnosticsPlugin
 function DiagnosticsPlugin.new(events, config)
   local self = {
-    name = 'diagnostics',
-    version = '3.0.0',
+    name = "diagnostics",
+    version = "3.0.0",
     dependencies = {},
     enabled = true,
     _events = events,
-    _config = vim.tbl_deep_extend('force', {
+    _config = vim.tbl_deep_extend("force", {
       enabled = false,
-      namespace = 'tsc',
+      namespace = "tsc",
       virtual_text = {
         enabled = true,
-        prefix = '■',
+        prefix = "■",
         spacing = 4,
         severity_limit = vim.diagnostic.severity.HINT,
       },
@@ -41,15 +41,15 @@ function DiagnosticsPlugin.new(events, config)
       severity_sort = true,
       float = {
         enabled = true,
-        source = 'always',
-        border = 'rounded',
+        source = "always",
+        border = "rounded",
         focusable = false,
       },
     }, config or {}),
     _namespace = nil,
     _diagnostics = {},
   }
-  
+
   return setmetatable(self, { __index = DiagnosticsPlugin })
 end
 
@@ -58,34 +58,34 @@ function DiagnosticsPlugin:setup()
   if not self._config.enabled then
     return
   end
-  
+
   -- Create diagnostic namespace
-  self._namespace = vim.api.nvim_create_namespace('tsc_' .. self._config.namespace)
-  
+  self._namespace = vim.api.nvim_create_namespace("tsc_" .. self._config.namespace)
+
   -- Configure diagnostic display
   self:_configure_diagnostics()
-  
+
   -- Subscribe to completion events
-  self._events:on('tsc.completed', function(data)
+  self._events:on("tsc.completed", function(data)
     self:_handle_completion(data)
   end)
-  
+
   -- Subscribe to start events to optionally clear diagnostics
-  self._events:on('tsc.started', function(data)
+  self._events:on("tsc.started", function(data)
     if self._config.clear_on_start then
       self:clear_all()
     end
   end)
-  
+
   -- Subscribe to stop events
-  self._events:on('tsc.stopped', function(data)
+  self._events:on("tsc.stopped", function(data)
     if self._config.clear_on_stop then
       self:clear_all()
     end
   end)
-  
+
   -- Subscribe to file change events for clearing
-  self._events:on('tsc.file_changed', function(data)
+  self._events:on("tsc.file_changed", function(data)
     if self._config.clear_on_change then
       self:clear_buffer(data.file)
     end
@@ -102,10 +102,10 @@ function DiagnosticsPlugin:_configure_diagnostics()
     severity_sort = self._config.severity_sort,
     float = self._config.float.enabled and self._config.float or false,
   }
-  
+
   -- Set namespace-specific configuration
   vim.diagnostic.config(config, self._namespace)
-  
+
   -- Define signs if enabled
   if self._config.signs.enabled then
     self:_define_signs()
@@ -115,12 +115,12 @@ end
 ---Define diagnostic signs
 function DiagnosticsPlugin:_define_signs()
   local signs = {
-    { name = 'DiagnosticSignError', text = '✘', texthl = 'DiagnosticSignError' },
-    { name = 'DiagnosticSignWarn',  text = '▲', texthl = 'DiagnosticSignWarn' },
-    { name = 'DiagnosticSignInfo',  text = '●', texthl = 'DiagnosticSignInfo' },
-    { name = 'DiagnosticSignHint',  text = '○', texthl = 'DiagnosticSignHint' },
+    { name = "DiagnosticSignError", text = "✘", texthl = "DiagnosticSignError" },
+    { name = "DiagnosticSignWarn", text = "▲", texthl = "DiagnosticSignWarn" },
+    { name = "DiagnosticSignInfo", text = "●", texthl = "DiagnosticSignInfo" },
+    { name = "DiagnosticSignHint", text = "○", texthl = "DiagnosticSignHint" },
   }
-  
+
   for _, sign in ipairs(signs) do
     vim.fn.sign_define(sign.name, {
       text = sign.text,
@@ -135,21 +135,21 @@ end
 function DiagnosticsPlugin:_handle_completion(data)
   -- Clear existing diagnostics
   self:clear_all()
-  
+
   local errors = data.errors or {}
   local diagnostics_by_file = {}
-  
+
   -- Group errors by file
   for _, error in ipairs(errors) do
     local filename = error.filename
     if not diagnostics_by_file[filename] then
       diagnostics_by_file[filename] = {}
     end
-    
+
     local diagnostic = self:_error_to_diagnostic(error)
     table.insert(diagnostics_by_file[filename], diagnostic)
   end
-  
+
   -- Set diagnostics for each file
   for filename, diagnostics in pairs(diagnostics_by_file) do
     self:set_buffer_diagnostics(filename, diagnostics)
@@ -162,15 +162,15 @@ end
 function DiagnosticsPlugin:_error_to_diagnostic(error)
   -- Parse error code and severity
   local code, severity = self:_parse_error_info(error.text)
-  
+
   return {
-    lnum = error.lnum - 1,  -- Convert to 0-based
-    col = error.col - 1,    -- Convert to 0-based
+    lnum = error.lnum - 1, -- Convert to 0-based
+    col = error.col - 1, -- Convert to 0-based
     end_lnum = error.lnum - 1,
     end_col = error.col - 1,
     severity = severity,
     message = error.text,
-    source = 'tsc',
+    source = "tsc",
     code = code,
   }
 end
@@ -180,14 +180,14 @@ end
 ---@return string|nil, number Error code and severity
 function DiagnosticsPlugin:_parse_error_info(message)
   -- Extract TypeScript error code
-  local code = message:match('TS(%d+):')
+  local code = message:match("TS(%d+):")
   if code then
-    code = 'TS' .. code
+    code = "TS" .. code
   end
-  
+
   -- Determine severity based on error code or message
   local severity = vim.diagnostic.severity.ERROR
-  
+
   if code then
     local code_num = tonumber(code:sub(3))
     if code_num then
@@ -203,12 +203,12 @@ function DiagnosticsPlugin:_parse_error_info(message)
       end
     end
   end
-  
+
   -- Check for warning keywords in message
-  if message:lower():match('warning') then
+  if message:lower():match("warning") then
     severity = vim.diagnostic.severity.WARN
   end
-  
+
   return code, severity
 end
 
@@ -221,10 +221,10 @@ function DiagnosticsPlugin:set_buffer_diagnostics(filename, diagnostics)
   if not bufnr then
     return
   end
-  
+
   -- Store diagnostics
   self._diagnostics[filename] = diagnostics
-  
+
   -- Set diagnostics
   vim.diagnostic.set(self._namespace, bufnr, diagnostics, {})
 end
@@ -237,15 +237,15 @@ function DiagnosticsPlugin:_get_or_create_buffer(filename)
   if vim.fn.filereadable(filename) ~= 1 then
     return nil
   end
-  
+
   -- Find existing buffer
   local bufnr = vim.fn.bufnr(filename)
-  
+
   -- Create buffer if it doesn't exist but don't load it
   if bufnr == -1 then
     bufnr = vim.fn.bufadd(filename)
   end
-  
+
   return bufnr
 end
 
@@ -256,7 +256,7 @@ function DiagnosticsPlugin:clear_buffer(filename)
   if bufnr ~= -1 then
     vim.diagnostic.reset(self._namespace, bufnr)
   end
-  
+
   self._diagnostics[filename] = nil
 end
 
@@ -329,17 +329,17 @@ function DiagnosticsPlugin:get_status()
     [vim.diagnostic.severity.INFO] = 0,
     [vim.diagnostic.severity.HINT] = 0,
   }
-  
+
   for filename, diagnostics in pairs(self._diagnostics) do
     files_with_diagnostics = files_with_diagnostics + 1
     total_diagnostics = total_diagnostics + #diagnostics
-    
+
     for _, diagnostic in ipairs(diagnostics) do
       local severity = diagnostic.severity or vim.diagnostic.severity.ERROR
       severity_counts[severity] = severity_counts[severity] + 1
     end
   end
-  
+
   return {
     namespace = self._namespace,
     total_diagnostics = total_diagnostics,
@@ -357,11 +357,11 @@ end
 ---Update plugin configuration
 ---@param new_config table New configuration
 function DiagnosticsPlugin:update_config(new_config)
-  self._config = vim.tbl_deep_extend('force', self._config, new_config)
-  
+  self._config = vim.tbl_deep_extend("force", self._config, new_config)
+
   -- Reconfigure diagnostics
   self:_configure_diagnostics()
-  
+
   -- Refresh display
   self:refresh()
 end
@@ -369,7 +369,7 @@ end
 ---Clean up plugin resources
 function DiagnosticsPlugin:cleanup()
   self:clear_all()
-  
+
   -- Reset namespace configuration
   vim.diagnostic.config({}, self._namespace)
 end

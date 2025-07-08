@@ -1,4 +1,4 @@
-local fs = require('tsc.utils.fs')
+local fs = require("tsc.utils.fs")
 
 ---@class ProjectDiscovery
 ---@field private _config table Discovery configuration
@@ -20,45 +20,41 @@ end
 ---@param mode string Discovery mode ('project', 'package', 'monorepo')
 ---@return table[] List of discovered projects
 function ProjectDiscovery:find_projects(mode)
-  local cache_key = mode .. ':' .. fs.cwd()
-  
+  local cache_key = mode .. ":" .. fs.cwd()
+
   -- Check cache first
   if self._cache[cache_key] then
     return self._cache[cache_key]
   end
-  
+
   local projects = {}
-  
-  if mode == 'project' then
+
+  if mode == "project" then
     projects = self:_find_single_project()
-  elseif mode == 'package' then
+  elseif mode == "package" then
     projects = self:_find_package_in_monorepo()
-  elseif mode == 'monorepo' then
+  elseif mode == "monorepo" then
     projects = self:_find_monorepo_projects()
   else
-    vim.notify(
-      string.format('Unknown discovery mode: %s', mode),
-      vim.log.levels.ERROR
-    )
+    vim.notify(string.format("Unknown discovery mode: %s", mode), vim.log.levels.ERROR)
     return {}
   end
-  
+
   -- Validate projects
   projects = self:_validate_projects(projects)
-  
+
   -- Apply max_projects limit
   if #projects > self._config.max_projects then
     vim.notify(
-      string.format('Too many projects found (%d), limiting to %d', 
-        #projects, self._config.max_projects),
+      string.format("Too many projects found (%d), limiting to %d", #projects, self._config.max_projects),
       vim.log.levels.WARN
     )
     projects = vim.list_slice(projects, 1, self._config.max_projects)
   end
-  
+
   -- Cache results
   self._cache[cache_key] = projects
-  
+
   return projects
 end
 
@@ -66,69 +62,71 @@ end
 ---@return table[] Single project or empty array
 function ProjectDiscovery:_find_single_project()
   local tsconfig = fs.find_file_upward(self._config.tsconfig_name)
-  
-  if tsconfig and tsconfig ~= '' then
+
+  if tsconfig and tsconfig ~= "" then
     local absolute_path = fs.absolute_path(tsconfig)
-    return {{
+    return { {
       path = absolute_path,
       root = fs.dirname(absolute_path),
-      type = 'project',
-    }}
+      type = "project",
+    } }
   end
-  
+
   return {}
 end
 
 ---Find package within monorepo (nearest package.json with tsconfig.json)
 ---@return table[] Package project or empty array
 function ProjectDiscovery:_find_package_in_monorepo()
-  local package_json = fs.find_file_upward('package.json')
-  
-  if package_json and package_json ~= '' then
+  local package_json = fs.find_file_upward("package.json")
+
+  if package_json and package_json ~= "" then
     local package_dir = fs.dirname(package_json)
     local tsconfig = fs.join(package_dir, self._config.tsconfig_name)
-    
+
     if fs.file_exists(tsconfig) then
-      return {{
-        path = fs.absolute_path(tsconfig),
-        root = package_dir,
-        type = 'package',
-      }}
+      return {
+        {
+          path = fs.absolute_path(tsconfig),
+          root = package_dir,
+          type = "package",
+        },
+      }
     end
   end
-  
+
   return {}
 end
 
 ---Find all projects in monorepo
 ---@return table[] All projects in monorepo
 function ProjectDiscovery:_find_monorepo_projects()
-  local pattern = '**/tsconfig*.json'
+  local pattern = "**/tsconfig*.json"
   local tsconfigs = fs.find_files_recursive(pattern, self._config.exclude_patterns)
-  
+
   local projects = {}
   local seen_roots = {}
-  
+
   for _, tsconfig in ipairs(tsconfigs) do
     local absolute_path = fs.absolute_path(tsconfig)
     local root = fs.dirname(absolute_path)
-    
+
     -- Avoid duplicate roots
     if not seen_roots[root] then
       seen_roots[root] = true
       table.insert(projects, {
         path = absolute_path,
         root = root,
-        type = 'monorepo',
+        type = "monorepo",
       })
     end
   end
-  
+
   -- Sort by path for consistent ordering
   table.sort(projects, function(a, b)
     return a.path < b.path
   end)
-  
+
   return projects
 end
 
@@ -137,18 +135,15 @@ end
 ---@return table[] Validated projects
 function ProjectDiscovery:_validate_projects(projects)
   local valid_projects = {}
-  
+
   for _, project in ipairs(projects) do
     if self:_is_valid_project(project) then
       table.insert(valid_projects, project)
     else
-      vim.notify(
-        string.format('Invalid project: %s', project.path),
-        vim.log.levels.WARN
-      )
+      vim.notify(string.format("Invalid project: %s", project.path), vim.log.levels.WARN)
     end
   end
-  
+
   return valid_projects
 end
 
@@ -160,24 +155,24 @@ function ProjectDiscovery:_is_valid_project(project)
   if not fs.file_exists(project.path) then
     return false
   end
-  
+
   -- Check if project root exists
   if not fs.dir_exists(project.root) then
     return false
   end
-  
+
   -- Try to read tsconfig.json to ensure it's valid JSON
   local content = fs.read_file(project.path)
   if not content then
     return false
   end
-  
+
   -- Basic JSON validation (just check if it starts with '{')
-  local trimmed = content:gsub('^%s*', '')
-  if not trimmed:match('^{') then
+  local trimmed = content:gsub("^%s*", "")
+  if not trimmed:match("^{") then
     return false
   end
-  
+
   return true
 end
 
@@ -197,14 +192,14 @@ end
 ---@return string|nil Found root directory
 function ProjectDiscovery:find_root_by_markers(markers, start_dir)
   start_dir = start_dir or fs.cwd()
-  
+
   for _, marker in ipairs(markers) do
     local found = fs.find_file_upward(marker, start_dir)
-    if found and found ~= '' then
+    if found and found ~= "" then
       return fs.dirname(found)
     end
   end
-  
+
   return nil
 end
 
@@ -224,12 +219,12 @@ end
 function ProjectDiscovery:get_stats()
   local total_cached = 0
   local cache_keys = {}
-  
+
   for key, projects in pairs(self._cache) do
     total_cached = total_cached + #projects
     table.insert(cache_keys, key)
   end
-  
+
   return {
     total_cached_projects = total_cached,
     cache_entries = #cache_keys,

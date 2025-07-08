@@ -5,38 +5,38 @@ local M = {}
 ---@type table
 M.DEFAULT_CONFIG = {
   -- Core execution mode
-  mode = 'project',        -- 'project' | 'package' | 'monorepo'
-  
+  mode = "project", -- 'project' | 'package' | 'monorepo'
+
   -- Project discovery configuration
   discovery = {
-    root_markers = { 'package.json', 'tsconfig.json' },
-    tsconfig_name = 'tsconfig.json',
+    root_markers = { "package.json", "tsconfig.json" },
+    tsconfig_name = "tsconfig.json",
     max_projects = 20,
-    exclude_patterns = { 'node_modules', '.git', 'dist', 'build' },
+    exclude_patterns = { "node_modules", ".git", "dist", "build" },
   },
-  
+
   -- TypeScript execution
   typescript = {
-    bin = nil,              -- Auto-detect if nil
-    flags = '--noEmit',     -- Simple string flags
-    timeout = 30000,        -- 30 second timeout
-    working_dir = nil,      -- Auto-detect project root
+    bin = nil, -- Auto-detect if nil
+    flags = "--noEmit", -- Simple string flags
+    timeout = 30000, -- 30 second timeout
+    working_dir = nil, -- Auto-detect project root
   },
-  
+
   -- Output configuration
   output = {
-    format = 'quickfix',    -- 'quickfix' | 'json' | 'raw'
-    auto_open = true,       -- Auto-open quickfix on errors
-    auto_close = true,      -- Auto-close quickfix when no errors
+    format = "quickfix", -- 'quickfix' | 'json' | 'raw'
+    auto_open = true, -- Auto-open quickfix on errors
+    auto_close = true, -- Auto-close quickfix when no errors
   },
-  
+
   -- Plugin configuration (extensible)
   plugins = {
     quickfix = { enabled = true },
     watch = { enabled = false },
     diagnostics = { enabled = false },
     better_messages = { enabled = true },
-  }
+  },
 }
 
 ---Get the default configuration

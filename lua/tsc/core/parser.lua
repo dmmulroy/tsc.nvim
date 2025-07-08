@@ -8,16 +8,16 @@ function M.parse_output(output)
   local errors = {}
   local files = {}
   local files_set = {}
-  
+
   if not output then
     return { errors = errors, files = files }
   end
-  
+
   for _, line in ipairs(output) do
     local parsed_error = M.parse_error_line(line)
     if parsed_error then
       table.insert(errors, parsed_error)
-      
+
       -- Track unique files
       if not files_set[parsed_error.filename] then
         files_set[parsed_error.filename] = true
@@ -25,7 +25,7 @@ function M.parse_output(output)
       end
     end
   end
-  
+
   return {
     errors = errors,
     files = files,
@@ -40,18 +40,18 @@ end
 function M.parse_error_line(line)
   -- TypeScript error format: filename(line,col): error TS####: message
   local filename, lineno, colno, message = line:match("^(.+)%((%d+),(%d+)%)%s*:%s*(.+)$")
-  
+
   if filename and lineno and colno and message then
     return {
       filename = filename,
       lnum = tonumber(lineno),
       col = tonumber(colno),
       text = message,
-      type = 'E',
+      type = "E",
       valid = 1,
     }
   end
-  
+
   return nil
 end
 
@@ -60,7 +60,7 @@ end
 ---@return table Parsed results with watch info
 function M.parse_watch_output(output)
   local results = M.parse_output(output)
-  
+
   -- Look for watch mode indicators
   local watch_info = {
     is_watch = false,
@@ -68,7 +68,7 @@ function M.parse_watch_output(output)
     is_incremental = false,
     file_changes = {},
   }
-  
+
   for _, line in ipairs(output) do
     if line:match("Watching for file changes") then
       watch_info.is_watch = true
@@ -82,7 +82,7 @@ function M.parse_watch_output(output)
       end
     end
   end
-  
+
   results.watch_info = watch_info
   return results
 end
@@ -93,24 +93,24 @@ end
 function M.parse_error_code(message)
   local error_info = {
     code = nil,
-    category = 'error',
-    severity = 'error',
+    category = "error",
+    severity = "error",
     original_message = message,
     enhanced_message = message,
   }
-  
+
   -- Extract TypeScript error code
   local code = message:match("TS(%d+):")
   if code then
     error_info.code = "TS" .. code
     error_info.numeric_code = tonumber(code)
   end
-  
+
   -- Categorize common errors
   if error_info.numeric_code then
     error_info.category = M.categorize_error(error_info.numeric_code)
   end
-  
+
   return error_info
 end
 
@@ -120,35 +120,35 @@ end
 function M.categorize_error(code)
   local categories = {
     -- Type errors
-    [2322] = 'type_assignment',
-    [2339] = 'property_missing',
-    [2345] = 'type_argument',
-    [2304] = 'name_not_found',
-    [2551] = 'property_not_exist',
-    
+    [2322] = "type_assignment",
+    [2339] = "property_missing",
+    [2345] = "type_argument",
+    [2304] = "name_not_found",
+    [2551] = "property_not_exist",
+
     -- Syntax errors
-    [1002] = 'syntax',
-    [1003] = 'syntax',
-    [1005] = 'syntax',
-    [1109] = 'syntax',
-    
+    [1002] = "syntax",
+    [1003] = "syntax",
+    [1005] = "syntax",
+    [1109] = "syntax",
+
     -- Import/Export errors
-    [2307] = 'module_resolution',
-    [2345] = 'import_export',
-    [2503] = 'module_resolution',
-    
+    [2307] = "module_resolution",
+    [2345] = "import_export",
+    [2503] = "module_resolution",
+
     -- Configuration errors
-    [5023] = 'config',
-    [5024] = 'config',
-    [5025] = 'config',
-    
+    [5023] = "config",
+    [5024] = "config",
+    [5025] = "config",
+
     -- Compiler option errors
-    [5042] = 'compiler_option',
-    [5043] = 'compiler_option',
-    [5044] = 'compiler_option',
+    [5042] = "compiler_option",
+    [5043] = "compiler_option",
+    [5044] = "compiler_option",
   }
-  
-  return categories[code] or 'general'
+
+  return categories[code] or "general"
 end
 
 ---Format error for display
@@ -156,9 +156,9 @@ end
 ---@param format? string Format type ('quickfix', 'json', 'plain')
 ---@return string|table Formatted error
 function M.format_error(error, format)
-  format = format or 'quickfix'
-  
-  if format == 'quickfix' then
+  format = format or "quickfix"
+
+  if format == "quickfix" then
     return {
       filename = error.filename,
       lnum = error.lnum,
@@ -167,19 +167,18 @@ function M.format_error(error, format)
       type = error.type,
       valid = error.valid,
     }
-  elseif format == 'json' then
+  elseif format == "json" then
     return {
       file = error.filename,
       line = error.lnum,
       column = error.col,
       message = error.text,
-      severity = error.type == 'E' and 'error' or 'warning',
+      severity = error.type == "E" and "error" or "warning",
     }
-  elseif format == 'plain' then
-    return string.format("%s:%d:%d: %s", 
-      error.filename, error.lnum, error.col, error.text)
+  elseif format == "plain" then
+    return string.format("%s:%d:%d: %s", error.filename, error.lnum, error.col, error.text)
   end
-  
+
   return error
 end
 
@@ -188,17 +187,17 @@ end
 ---@param format? string Format type
 ---@return table|string Formatted errors
 function M.format_errors(errors, format)
-  format = format or 'quickfix'
-  
+  format = format or "quickfix"
+
   local formatted = {}
   for _, error in ipairs(errors) do
     table.insert(formatted, M.format_error(error, format))
   end
-  
-  if format == 'json' then
+
+  if format == "json" then
     return vim.fn.json_encode(formatted)
   end
-  
+
   return formatted
 end
 
@@ -207,7 +206,7 @@ end
 ---@return table<string, table[]> Errors grouped by file
 function M.group_errors_by_file(errors)
   local grouped = {}
-  
+
   for _, error in ipairs(errors) do
     local filename = error.filename
     if not grouped[filename] then
@@ -215,7 +214,7 @@ function M.group_errors_by_file(errors)
     end
     table.insert(grouped[filename], error)
   end
-  
+
   return grouped
 end
 
@@ -224,18 +223,18 @@ end
 ---@return table<string, table[]> Errors grouped by category
 function M.group_errors_by_category(errors)
   local grouped = {}
-  
+
   for _, error in ipairs(errors) do
     local error_info = M.parse_error_code(error.text)
     local category = error_info.category
-    
+
     if not grouped[category] then
       grouped[category] = {}
     end
-    
+
     table.insert(grouped[category], error)
   end
-  
+
   return grouped
 end
 
@@ -249,32 +248,32 @@ function M.get_error_stats(errors)
     error_categories = {},
     severity_counts = { error = 0, warning = 0 },
   }
-  
+
   local files_set = {}
   local categories = {}
-  
+
   for _, error in ipairs(errors) do
     -- Count unique files
     if not files_set[error.filename] then
       files_set[error.filename] = true
       stats.files_with_errors = stats.files_with_errors + 1
     end
-    
+
     -- Count categories
     local error_info = M.parse_error_code(error.text)
     local category = error_info.category
     categories[category] = (categories[category] or 0) + 1
-    
+
     -- Count severity
-    if error.type == 'E' then
+    if error.type == "E" then
       stats.severity_counts.error = stats.severity_counts.error + 1
     else
       stats.severity_counts.warning = stats.severity_counts.warning + 1
     end
   end
-  
+
   stats.error_categories = categories
-  
+
   return stats
 end
 
@@ -284,15 +283,15 @@ end
 ---@return table[] Filtered errors
 function M.filter_errors(errors, criteria)
   local filtered = {}
-  
+
   for _, error in ipairs(errors) do
     local include = true
-    
+
     -- Filter by filename pattern
     if criteria.filename_pattern and not error.filename:match(criteria.filename_pattern) then
       include = false
     end
-    
+
     -- Filter by error code
     if criteria.error_code then
       local error_info = M.parse_error_code(error.text)
@@ -300,7 +299,7 @@ function M.filter_errors(errors, criteria)
         include = false
       end
     end
-    
+
     -- Filter by category
     if criteria.category then
       local error_info = M.parse_error_code(error.text)
@@ -308,20 +307,20 @@ function M.filter_errors(errors, criteria)
         include = false
       end
     end
-    
+
     -- Filter by severity
     if criteria.severity then
-      local severity = error.type == 'E' and 'error' or 'warning'
+      local severity = error.type == "E" and "error" or "warning"
       if severity ~= criteria.severity then
         include = false
       end
     end
-    
+
     if include then
       table.insert(filtered, error)
     end
   end
-  
+
   return filtered
 end
 
@@ -331,27 +330,27 @@ end
 ---@param order? string Sort order ('asc', 'desc')
 ---@return table[] Sorted errors
 function M.sort_errors(errors, sort_by, order)
-  sort_by = sort_by or 'filename'
-  order = order or 'asc'
-  
+  sort_by = sort_by or "filename"
+  order = order or "asc"
+
   local sorted = vim.deepcopy(errors)
-  
+
   table.sort(sorted, function(a, b)
     local result = false
-    
-    if sort_by == 'filename' then
+
+    if sort_by == "filename" then
       result = a.filename < b.filename
-    elseif sort_by == 'line' then
+    elseif sort_by == "line" then
       result = a.lnum < b.lnum
-    elseif sort_by == 'column' then
+    elseif sort_by == "column" then
       result = a.col < b.col
-    elseif sort_by == 'message' then
+    elseif sort_by == "message" then
       result = a.text < b.text
     end
-    
-    return order == 'asc' and result or not result
+
+    return order == "asc" and result or not result
   end)
-  
+
   return sorted
 end
 

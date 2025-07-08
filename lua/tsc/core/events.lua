@@ -17,8 +17,8 @@ end
 ---@param event string Event name
 ---@param data? table Event data
 function Events:emit(event, data)
-  if not event or type(event) ~= 'string' then
-    vim.notify('Events:emit() requires a valid event name', vim.log.levels.ERROR)
+  if not event or type(event) ~= "string" then
+    vim.notify("Events:emit() requires a valid event name", vim.log.levels.ERROR)
     return
   end
 
@@ -32,10 +32,7 @@ function Events:emit(event, data)
     vim.schedule(function()
       local success, err = pcall(callback, data)
       if not success then
-        vim.notify(
-          string.format('Error in event listener for "%s": %s', event, err),
-          vim.log.levels.ERROR
-        )
+        vim.notify(string.format('Error in event listener for "%s": %s', event, err), vim.log.levels.ERROR)
       end
     end)
   end
@@ -46,10 +43,7 @@ function Events:emit(event, data)
     vim.schedule(function()
       local success, err = pcall(callback, data)
       if not success then
-        vim.notify(
-          string.format('Error in once event listener for "%s": %s', event, err),
-          vim.log.levels.ERROR
-        )
+        vim.notify(string.format('Error in once event listener for "%s": %s', event, err), vim.log.levels.ERROR)
       end
     end)
   end
@@ -63,13 +57,13 @@ end
 ---@param callback function Event callback
 ---@return function Unsubscribe function
 function Events:on(event, callback)
-  if not event or type(event) ~= 'string' then
-    vim.notify('Events:on() requires a valid event name', vim.log.levels.ERROR)
+  if not event or type(event) ~= "string" then
+    vim.notify("Events:on() requires a valid event name", vim.log.levels.ERROR)
     return function() end
   end
 
-  if not callback or type(callback) ~= 'function' then
-    vim.notify('Events:on() requires a valid callback function', vim.log.levels.ERROR)
+  if not callback or type(callback) ~= "function" then
+    vim.notify("Events:on() requires a valid callback function", vim.log.levels.ERROR)
     return function() end
   end
 
@@ -109,13 +103,13 @@ end
 ---@param callback function Event callback
 ---@return function Unsubscribe function
 function Events:once(event, callback)
-  if not event or type(event) ~= 'string' then
-    vim.notify('Events:once() requires a valid event name', vim.log.levels.ERROR)
+  if not event or type(event) ~= "string" then
+    vim.notify("Events:once() requires a valid event name", vim.log.levels.ERROR)
     return function() end
   end
 
-  if not callback or type(callback) ~= 'function' then
-    vim.notify('Events:once() requires a valid callback function', vim.log.levels.ERROR)
+  if not callback or type(callback) ~= "function" then
+    vim.notify("Events:once() requires a valid callback function", vim.log.levels.ERROR)
     return function() end
   end
 
@@ -173,15 +167,15 @@ end
 function Events:stats()
   local regular_count = 0
   local once_count = 0
-  
+
   for _, listeners in pairs(self._listeners) do
     regular_count = regular_count + #listeners
   end
-  
+
   for _, listeners in pairs(self._once_listeners) do
     once_count = once_count + #listeners
   end
-  
+
   return {
     regular_listeners = regular_count,
     once_listeners = once_count,
@@ -192,35 +186,35 @@ end
 -- Event constants
 Events.EVENTS = {
   -- Lifecycle events
-  INITIALIZED = 'tsc.initialized',
-  RUN_REQUESTED = 'tsc.run_requested',
-  STARTED = 'tsc.started',
-  COMPLETED = 'tsc.completed',
-  STOPPED = 'tsc.stopped',
-  ERROR = 'tsc.error',
-  
+  INITIALIZED = "tsc.initialized",
+  RUN_REQUESTED = "tsc.run_requested",
+  STARTED = "tsc.started",
+  COMPLETED = "tsc.completed",
+  STOPPED = "tsc.stopped",
+  ERROR = "tsc.error",
+
   -- Process events
-  PROCESS_STARTED = 'tsc.process_started',
-  PROCESS_COMPLETED = 'tsc.process_completed',
-  PROCESS_ERROR = 'tsc.process_error',
-  
+  PROCESS_STARTED = "tsc.process_started",
+  PROCESS_COMPLETED = "tsc.process_completed",
+  PROCESS_ERROR = "tsc.process_error",
+
   -- Output events
-  OUTPUT_RECEIVED = 'tsc.output_received',
-  OUTPUT_PARSED = 'tsc.output_parsed',
-  RESULTS_READY = 'tsc.results_ready',
-  
+  OUTPUT_RECEIVED = "tsc.output_received",
+  OUTPUT_PARSED = "tsc.output_parsed",
+  RESULTS_READY = "tsc.results_ready",
+
   -- Project events
-  PROJECT_DISCOVERED = 'tsc.project_discovered',
-  PROJECT_VALIDATED = 'tsc.project_validated',
-  
+  PROJECT_DISCOVERED = "tsc.project_discovered",
+  PROJECT_VALIDATED = "tsc.project_validated",
+
   -- Watch events
-  WATCH_STARTED = 'tsc.watch_started',
-  WATCH_STOPPED = 'tsc.watch_stopped',
-  FILE_CHANGED = 'tsc.file_changed',
-  
+  WATCH_STARTED = "tsc.watch_started",
+  WATCH_STOPPED = "tsc.watch_stopped",
+  FILE_CHANGED = "tsc.file_changed",
+
   -- Plugin events
-  PLUGIN_LOADED = 'tsc.plugin_loaded',
-  PLUGIN_ERROR = 'tsc.plugin_error',
+  PLUGIN_LOADED = "tsc.plugin_loaded",
+  PLUGIN_ERROR = "tsc.plugin_error",
 }
 
 return Events

@@ -1,6 +1,6 @@
-local defaults = require('tsc.config.defaults')
-local schema = require('tsc.config.schema')
-local migration = require('tsc.config.migration')
+local defaults = require("tsc.config.defaults")
+local schema = require("tsc.config.schema")
+local migration = require("tsc.config.migration")
 
 ---@class ConfigManager
 ---@field private _config table Current configuration
@@ -15,10 +15,10 @@ function ConfigManager.new(user_config)
     _config = {},
     _defaults = defaults.get_defaults(),
   }
-  
+
   -- Set up configuration
   self:_setup_config(user_config or {})
-  
+
   return setmetatable(self, { __index = ConfigManager })
 end
 
@@ -27,21 +27,18 @@ end
 function ConfigManager:_setup_config(user_config)
   -- Check if this is a 2.x configuration and migrate if needed
   local migrated_config = migration.migrate_if_needed(user_config)
-  
+
   -- Validate configuration
   local valid, error_msg = schema.validate(migrated_config)
   if not valid then
-    vim.notify(
-      string.format('Invalid tsc.nvim configuration: %s', error_msg),
-      vim.log.levels.ERROR
-    )
+    vim.notify(string.format("Invalid tsc.nvim configuration: %s", error_msg), vim.log.levels.ERROR)
     -- Fall back to defaults
     self._config = self._defaults
     return
   end
-  
+
   -- Merge user config with defaults
-  self._config = vim.tbl_deep_extend('force', self._defaults, migrated_config)
+  self._config = vim.tbl_deep_extend("force", self._defaults, migrated_config)
 end
 
 ---Get the current configuration
@@ -67,15 +64,12 @@ function ConfigManager:update(updates)
   -- Validate updates
   local valid, error_msg = schema.validate(updates)
   if not valid then
-    vim.notify(
-      string.format('Invalid configuration update: %s', error_msg),
-      vim.log.levels.ERROR
-    )
+    vim.notify(string.format("Invalid configuration update: %s", error_msg), vim.log.levels.ERROR)
     return false
   end
-  
+
   -- Apply updates
-  self._config = vim.tbl_deep_extend('force', self._config, updates)
+  self._config = vim.tbl_deep_extend("force", self._config, updates)
   return true
 end
 
@@ -107,20 +101,20 @@ function ConfigManager:get_tsc_binary()
   if bin then
     return bin
   end
-  
+
   -- Auto-detect TypeScript binary
-  local node_modules_tsc = vim.fn.findfile('node_modules/.bin/tsc', '.;')
-  if node_modules_tsc ~= '' then
+  local node_modules_tsc = vim.fn.findfile("node_modules/.bin/tsc", ".;")
+  if node_modules_tsc ~= "" then
     return node_modules_tsc
   end
-  
-  return 'tsc'
+
+  return "tsc"
 end
 
 ---Get TypeScript flags
 ---@return string
 function ConfigManager:get_tsc_flags()
-  return self._config.typescript.flags or '--noEmit'
+  return self._config.typescript.flags or "--noEmit"
 end
 
 ---Get process timeout
@@ -150,7 +144,7 @@ end
 ---Get execution mode
 ---@return string
 function ConfigManager:get_mode()
-  return self._config.mode or 'project'
+  return self._config.mode or "project"
 end
 
 ---Reset configuration to defaults
