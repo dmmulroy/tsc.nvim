@@ -18,9 +18,6 @@ local DEFAULT_CONFIG = {
   enable_progress_notifications = true,
   flags = {
     noEmit = true,
-    project = function()
-      return utils.find_nearest_tsconfig()
-    end,
     watch = false,
   },
   hide_progress_notifications_from_history = true,
@@ -190,7 +187,36 @@ M.run = function()
     opts.on_stdout = watch_on_stdout
   end
 
-  vim.fn.jobstart(tsc .. " " .. utils.parse_flags(config.flags), opts)
+  -- Set working directory to project root if available
+  local parsed_flags = utils.parse_flags(config.flags)
+  local tsconfig_path = utils.find_nearest_tsconfig()
+  if tsconfig_path then
+    -- Validate that tsconfig file exists
+    if vim.fn.filereadable(tsconfig_path) == 0 then
+      vim.notify(
+        format_notification_msg(
+          string.format("tsconfig.json file not found or not readable: %s", tsconfig_path)
+        ),
+        vim.log.levels.ERROR,
+        get_notify_options()
+      )
+      is_running = false
+      return
+    end
+    opts.cwd = utils.get_project_root(tsconfig_path)
+  else
+    vim.notify(
+      format_notification_msg(
+        "No tsconfig.json found. Please create a tsconfig.json file in your project root."
+      ),
+      vim.log.levels.ERROR,
+      get_notify_options()
+    )
+    is_running = false
+    return
+  end
+
+  vim.fn.jobstart(tsc .. " " .. parsed_flags, opts)
 end
 
 function M.is_running()

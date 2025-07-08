@@ -20,9 +20,16 @@ M.find_nearest_tsconfig = function()
   local tsconfig = vim.fn.findfile("tsconfig.json", ".;")
 
   if tsconfig ~= "" then
-    return tsconfig
+    return vim.fn.fnamemodify(tsconfig, ":p")
   end
 
+  return nil
+end
+
+M.get_project_root = function(tsconfig_path)
+  if tsconfig_path then
+    return vim.fn.fnamemodify(tsconfig_path, ":h")
+  end
   return nil
 end
 
@@ -32,6 +39,19 @@ M.parse_flags = function(flags)
   end
 
   local parsed_flags = ""
+
+  -- Auto-detect project if not explicitly configured
+  if not flags.project then
+    local nearest_tsconfig = M.find_nearest_tsconfig()
+    if nearest_tsconfig then
+      flags.project = nearest_tsconfig
+    end
+  end
+  
+  -- Add --color false to ensure plain text output for parsing, unless user explicitly set color
+  if flags.color == nil then
+    flags.color = false
+  end
 
   for key, value in pairs(flags) do
     key = string.gsub(key, "%-%-", "")

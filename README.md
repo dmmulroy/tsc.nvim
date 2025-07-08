@@ -70,7 +70,7 @@ If `watch` mode is enabled, tsc.nvim will automatically run in the background ev
 
 ## Configuration
 
-By default, the plugin uses the default `tsc` command with the `--noEmit` flag to avoid generating output files during type-checking. It also emulates the default tsc behavior of performing a backward search from the current directory for a `tsconfig` file. The flags option can accept both a string and a table. Here's the default configuration:
+By default, the plugin uses the default `tsc` command with the `--noEmit` flag to avoid generating output files during type-checking and `--color false` to ensure proper error parsing. It automatically performs a backward search from the current directory for a `tsconfig` file when no explicit project is configured. The flags option can accept both a string and a table. Here's the default configuration:
 
 ```lua
 {
@@ -82,9 +82,6 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
   enable_progress_notifications = true,
   flags = {
     noEmit = true,
-    project = function()
-      return utils.find_nearest_tsconfig()
-    end,
     watch = false,
   },
   hide_progress_notifications_from_history = true,
@@ -93,7 +90,7 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
 }
 ```
 
-With this configuration, you can use keys for flag names and their corresponding values to enable/disable the flag (in the case of `noEmit = true`), provide a function (as in the case of the `project`) or enable watch mode. This makes the configuration more explicit and easier to read. Additionally, the flags option is backwards compatible and can accept a string value if you prefer a simpler configuration:
+With this configuration, you can use keys for flag names and their corresponding values to enable/disable the flag (in the case of `noEmit = true`), specify a custom project path (e.g., `project = "/path/to/tsconfig.json"`), or enable watch mode. This makes the configuration more explicit and easier to read. Additionally, the flags option is backwards compatible and can accept a string value if you prefer a simpler configuration:
 
 ```lua
 flags = "--noEmit",
