@@ -72,7 +72,7 @@ To stop any running `:TSC` command, use the `:TSCStop` command in Neovim.
 
 ## Configuration
 
-By default, the plugin uses the default `tsc` command with the `--noEmit` flag to avoid generating output files during type-checking and `--color false` to ensure proper error parsing. It automatically performs a backward search from the current directory for a `tsconfig` file when no explicit project is configured. The flags option can accept both a string and a table. Here's the default configuration:
+By default, the plugin uses the default `tsc` command with the `--noEmit` flag to avoid generating output files during type-checking. It automatically adds `--color false` to ensure proper error parsing (unless you explicitly set `color = true`). It performs a backward search from the current directory for a `tsconfig` file when no explicit project is configured. The flags option can accept both a string and a table. Here's the default configuration:
 
 ```lua
 {
@@ -84,7 +84,7 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
   use_diagnostics = false,
   run_as_monorepo = false,
   max_tsconfig_files = 20,
-  bin_path = utils.find_tsc_bin(),
+  bin_path = nil,
   enable_progress_notifications = true,
   enable_error_notifications = true,
   flags = {
@@ -97,7 +97,11 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
 }
 ```
 
-With this configuration, you can use keys for flag names and their corresponding values to enable/disable the flag (in the case of `noEmit = true`), specify a custom project path (e.g., `project = "/path/to/tsconfig.json"`), or enable watch mode. This makes the configuration more explicit and easier to read. Additionally, the flags option is backwards compatible and can accept a string value if you prefer a simpler configuration:
+With this configuration, you can use keys for flag names and their corresponding values to enable/disable the flag (in the case of `noEmit = true`), specify a custom project path (e.g., `project = "/path/to/tsconfig.json"`), or enable watch mode. This makes the configuration more explicit and easier to read. 
+
+**Note**: The plugin automatically adds `--color false` to ensure proper error parsing unless you explicitly set `color = true` in your flags.
+
+Additionally, the flags option is backwards compatible and can accept a string value if you prefer a simpler configuration:
 
 ```lua
 flags = "--noEmit",
