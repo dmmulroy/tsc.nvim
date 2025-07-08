@@ -78,7 +78,7 @@ M.parse_flags = function(flags)
       flags.project = nearest_tsconfigs[1]
     end
   end
-  
+
   -- Add --color false to ensure plain text output for parsing, unless user explicitly set color
   if flags.color == nil then
     flags.color = false
