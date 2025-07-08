@@ -143,55 +143,6 @@ describe('OutputParser', function()
     end)
   end)
   
-  describe('format_error', function()
-    it('should format error for quickfix', function()
-      local error = {
-        filename = 'src/index.ts',
-        lnum = 10,
-        col = 5,
-        text = 'error TS2322: Type error',
-        type = 'E',
-        valid = 1,
-      }
-      
-      local formatted = parser.format_error(error, 'quickfix')
-      
-      assert.are.same(error, formatted)
-    end)
-    
-    it('should format error as JSON', function()
-      local error = {
-        filename = 'src/index.ts',
-        lnum = 10,
-        col = 5,
-        text = 'error TS2322: Type error',
-        type = 'E',
-        valid = 1,
-      }
-      
-      local formatted = parser.format_error(error, 'json')
-      
-      assert.equal('src/index.ts', formatted.file)
-      assert.equal(10, formatted.line)
-      assert.equal(5, formatted.column)
-      assert.equal('error', formatted.severity)
-    end)
-    
-    it('should format error as plain text', function()
-      local error = {
-        filename = 'src/index.ts',
-        lnum = 10,
-        col = 5,
-        text = 'error TS2322: Type error',
-        type = 'E',
-        valid = 1,
-      }
-      
-      local formatted = parser.format_error(error, 'plain')
-      
-      assert.equal('src/index.ts:10:5: error TS2322: Type error', formatted)
-    end)
-  end)
   
   describe('group_errors_by_file', function()
     it('should group errors by filename', function()

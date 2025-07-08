@@ -79,11 +79,6 @@ M.schema = {
     output = {
       type = "object",
       properties = {
-        format = {
-          type = "string",
-          enum = { "quickfix", "json", "raw" },
-          description = "Output format",
-        },
         auto_open = {
           type = "boolean",
           description = "Auto-open quickfix on errors",
@@ -118,7 +113,6 @@ M.schema = {
 ---@field working_dir? string
 
 ---@class OutputConfig
----@field format? string
 ---@field auto_open? boolean
 ---@field auto_close? boolean
 
@@ -216,9 +210,6 @@ function M.validate(config)
       return false, "output must be a table"
     end
 
-    if config.output.format and not vim.tbl_contains({ "quickfix", "json", "raw" }, config.output.format) then
-      return false, "output.format must be one of: quickfix, json, raw"
-    end
 
     if config.output.auto_open ~= nil and type(config.output.auto_open) ~= "boolean" then
       return false, "output.auto_open must be a boolean"

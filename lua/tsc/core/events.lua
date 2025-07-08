@@ -206,6 +206,23 @@ Events.EVENTS = {
   -- Project events
   PROJECT_DISCOVERED = "tsc.project_discovered",
   PROJECT_VALIDATED = "tsc.project_validated",
+  PROJECTS_DISCOVERED = "tsc.projects_discovered",
+  DISCOVERY_PROGRESS = "tsc.discovery_progress",
+
+  -- Batch processing events
+  BATCH_STARTED = "tsc.batch_started",
+  BATCH_QUEUED = "tsc.batch_queued",
+  BATCH_PROCESSING = "tsc.batch_processing",
+  BATCH_COMPLETED = "tsc.batch_completed",
+  BATCH_CANCELLED = "tsc.batch_cancelled",
+  BATCH_RETRY = "tsc.batch_retry",
+  BATCH_ALL_COMPLETED = "tsc.batch_all_completed",
+
+  -- Queue events
+  QUEUE_PROGRESS = "tsc.queue_progress",
+  PROJECT_QUEUED = "tsc.project_queued",
+  PROJECT_DEQUEUED = "tsc.project_dequeued",
+  PROJECT_COMPLETED = "tsc.project_completed",
 
   -- Watch events
   WATCH_STARTED = "tsc.watch_started",

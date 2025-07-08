@@ -317,7 +317,86 @@ function ProcessManager:get_stats()
   }
 end
 
--- Export both classes
+---Run a process synchronously and return results
+---@param opts ProcessOptions Process options
+---@return table Result with stdout, stderr, exit_code
+function M.run_sync(opts)
+  local result = {
+    stdout = {},
+    stderr = {},
+    exit_code = nil,
+    duration = 0,
+  }
+  
+  local start_time = vim.loop.now()
+  local done = false
+  
+  -- Build command
+  local cmd = opts.command
+  if opts.args and #opts.args > 0 then
+    cmd = cmd .. " " .. table.concat(opts.args, " ")
+  end
+  
+  -- Set up job options
+  local job_opts = {
+    cwd = opts.cwd or vim.fn.getcwd(),
+    on_stdout = function(_, data)
+      if data then
+        for _, line in ipairs(data) do
+          if line ~= "" then
+            table.insert(result.stdout, line)
+          end
+        end
+      end
+    end,
+    on_stderr = function(_, data)
+      if data then
+        for _, line in ipairs(data) do
+          if line ~= "" then
+            table.insert(result.stderr, line)
+          end
+        end
+      end
+    end,
+    on_exit = function(_, code)
+      result.exit_code = code
+      result.duration = vim.loop.now() - start_time
+      done = true
+    end,
+    stdout_buffered = true,
+    stderr_buffered = true,
+  }
+  
+  -- Start job
+  local job_id = vim.fn.jobstart(cmd, job_opts)
+  
+  if job_id <= 0 then
+    result.exit_code = -1
+    result.duration = vim.loop.now() - start_time
+    return result
+  end
+  
+  -- Wait for completion or timeout
+  local timeout = opts.timeout or 30000
+  local elapsed = 0
+  local check_interval = 50 -- ms
+  
+  while not done and elapsed < timeout do
+    vim.wait(check_interval)
+    elapsed = elapsed + check_interval
+  end
+  
+  -- Handle timeout
+  if not done then
+    vim.fn.jobstop(job_id)
+    result.exit_code = -1
+    result.duration = vim.loop.now() - start_time
+  end
+  
+  return result
+end
+
+-- Export both classes and utility functions
 M.Process = Process
 M.ProcessManager = ProcessManager
 

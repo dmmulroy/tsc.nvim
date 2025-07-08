@@ -160,7 +160,7 @@ function ConfigManager:get_summary()
     typescript_bin = self:get_tsc_binary(),
     typescript_flags = self:get_tsc_flags(),
     timeout = self:get_timeout(),
-    output_format = self._config.output.format,
+    output_auto_open = self._config.output.auto_open,
     enabled_plugins = vim.tbl_filter(function(plugin_name)
       return self:is_plugin_enabled(plugin_name)
     end, vim.tbl_keys(self._config.plugins)),

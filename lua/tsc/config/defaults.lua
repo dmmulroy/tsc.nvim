@@ -11,7 +11,7 @@ M.DEFAULT_CONFIG = {
   discovery = {
     root_markers = { "package.json", "tsconfig.json" },
     tsconfig_name = "tsconfig.json",
-    max_projects = 20,
+    max_projects = 0, -- 0 = no limit (use batch system instead)
     exclude_patterns = { "node_modules", ".git", "dist", "build" },
   },
 
@@ -25,9 +25,20 @@ M.DEFAULT_CONFIG = {
 
   -- Output configuration
   output = {
-    format = "quickfix", -- 'quickfix' | 'json' | 'raw'
     auto_open = true, -- Auto-open quickfix on errors
     auto_close = true, -- Auto-close quickfix when no errors
+  },
+
+  -- Batch processing configuration
+  batch = {
+    enabled = true, -- Enable queue-based batch processing
+    size = 5, -- Number of projects per batch
+    concurrency = 3, -- Maximum concurrent processes
+    strategy = "size", -- 'priority' | 'size' | 'alpha' | 'fifo'
+    progressive_results = true, -- Report results as they complete
+    retry_failed = true, -- Retry failed projects
+    retry_count = 2, -- Maximum retry attempts
+    timeout_per_project = 30000, -- Timeout per project in milliseconds
   },
 
   -- Plugin configuration (extensible)

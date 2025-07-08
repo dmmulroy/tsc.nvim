@@ -183,7 +183,6 @@ M.migration = {
       },
 
       output = {
-        format = "quickfix",
         auto_open = old_config.auto_open_qflist,
         auto_close = old_config.auto_close_qflist,
       },

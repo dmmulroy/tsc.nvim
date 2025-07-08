@@ -34,7 +34,7 @@ describe('ConfigManager', function()
       local valid_config = ConfigManager.new({
         mode = 'project',
         output = {
-          format = 'quickfix',
+          auto_open = true,
         },
       })
       assert.is_table(valid_config)
@@ -153,7 +153,7 @@ describe('ConfigManager', function()
       assert.is_string(summary.typescript_bin)
       assert.is_string(summary.typescript_flags)
       assert.is_number(summary.timeout)
-      assert.is_string(summary.output_format)
+      assert.is_boolean(summary.output_auto_open)
       assert.is_table(summary.enabled_plugins)
     end)
   end)

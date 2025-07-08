@@ -45,7 +45,6 @@ require('tsc').setup({
   
   -- Output configuration
   output = {
-    format = 'quickfix',
     auto_open = true,
     auto_close = false,  -- Keep open to see patterns across projects
   },

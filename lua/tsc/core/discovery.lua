@@ -229,7 +229,38 @@ function ProjectDiscovery:get_stats()
     total_cached_projects = total_cached,
     cache_entries = #cache_keys,
     cache_keys = cache_keys,
+    total_estimated_size = total_size,
+    average_project_size = total_cached > 0 and (total_size / total_cached) or 0,
+    largest_project_size = #project_sizes > 0 and math.max(unpack(project_sizes)) or 0,
+    smallest_project_size = #project_sizes > 0 and math.min(unpack(project_sizes)) or 0,
   }
+end
+
+---Create a streaming discovery iterator for large monorepos
+---@param mode string Discovery mode
+---@param batch_size? number Number of projects per batch
+---@return function Iterator function
+function ProjectDiscovery:stream_projects(mode, batch_size)
+  batch_size = batch_size or 10
+  local all_projects = self:find_projects(mode, { force_refresh = true })
+  local index = 1
+  
+  return function()
+    if index > #all_projects then
+      return nil
+    end
+    
+    local end_index = math.min(index + batch_size - 1, #all_projects)
+    local batch = {}
+    
+    for i = index, end_index do
+      table.insert(batch, all_projects[i])
+    end
+    
+    index = end_index + 1
+    
+    return batch, index - 1, #all_projects
+  end
 end
 
 return ProjectDiscovery

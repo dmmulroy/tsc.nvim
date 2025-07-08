@@ -19,9 +19,6 @@ require('tsc').setup({
   
   -- Output configuration
   output = {
-    -- Use quickfix list for errors
-    format = 'quickfix',
-    
     -- Auto-open quickfix when errors found
     auto_open = true,
     

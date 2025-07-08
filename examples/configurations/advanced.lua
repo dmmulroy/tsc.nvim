@@ -29,7 +29,6 @@ require('tsc').setup({
   },
   
   output = {
-    format = 'quickfix',
     auto_open = true,
     auto_close = false,
   },

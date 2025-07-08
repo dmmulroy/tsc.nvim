@@ -38,6 +38,7 @@ function M.is_v2_config(config)
   return false
 end
 
+
 ---Convert 2.x configuration to 3.x format
 ---@param old_config table 2.x configuration
 ---@return table 3.x configuration
@@ -80,7 +81,6 @@ function M.migrate_v2_config(old_config)
 
   -- Migrate output section
   new_config.output = {
-    format = "quickfix",
     auto_open = old_config.auto_open_qflist,
     auto_close = old_config.auto_close_qflist,
   }
@@ -105,6 +105,7 @@ function M.migrate_v2_config(old_config)
 
   return new_config
 end
+
 
 ---Show migration warnings for deprecated features
 ---@param old_config table 2.x configuration
