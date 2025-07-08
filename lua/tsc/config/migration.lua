@@ -110,31 +110,52 @@ end
 ---@param old_config table 2.x configuration
 function M.show_migration_warnings(old_config)
   local warnings = {}
+  local infos = {}
   
+  -- Breaking changes that need user attention
   if old_config.use_trouble_qflist then
     table.insert(warnings, 'use_trouble_qflist: Configure trouble.nvim externally instead')
   end
   
   if old_config.enable_progress_notifications == false then
-    table.insert(warnings, 'enable_progress_notifications: Use notification plugins instead')
+    table.insert(infos, 'Progress notifications now handled by external plugins')
   end
   
   if old_config.enable_error_notifications == false then
-    table.insert(warnings, 'enable_error_notifications: Use notification plugins instead')
+    table.insert(infos, 'Error notifications now handled by external plugins')
   end
   
   if old_config.hide_progress_notifications_from_history then
-    table.insert(warnings, 'hide_progress_notifications_from_history: Configure notifications externally')
+    table.insert(infos, 'Notification history now configured externally')
   end
   
   if old_config.spinner then
-    table.insert(warnings, 'spinner: Configure notifications externally')
+    table.insert(infos, 'Custom spinners now configured in notification plugins')
   end
   
+  -- Configuration migrations
+  if old_config.flags and type(old_config.flags) == 'table' then
+    table.insert(infos, 'Table-style flags converted to string format')
+  end
+  
+  if old_config.max_tsconfig_files then
+    table.insert(infos, 'max_tsconfig_files → discovery.max_projects')
+  end
+  
+  -- Show warnings for breaking changes
   if #warnings > 0 then
     vim.notify(
-      'tsc.nvim 3.0 Migration Warnings:\n' .. table.concat(warnings, '\n'),
+      'tsc.nvim 3.0 Migration Required:\n' .. table.concat(warnings, '\n') .. 
+      '\nSee :help tsc-migration for details.',
       vim.log.levels.WARN
+    )
+  end
+  
+  -- Show info for automatic migrations
+  if #infos > 0 then
+    vim.notify(
+      'tsc.nvim 3.0 Configuration Migrated:\n' .. table.concat(infos, '\n'),
+      vim.log.levels.INFO
     )
   end
 end

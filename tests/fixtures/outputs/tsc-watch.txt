@@ -1,0 +1,14 @@
+Starting compilation in watch mode...
+
+src/index.ts(10,5): error TS2322: Type 'string' is not assignable to type 'number'.
+
+Found 1 error. Watching for file changes.
+
+File change detected. Starting incremental compilation...
+
+src/index.ts(10,5): error TS2322: Type 'string' is not assignable to type 'number'.
+src/utils.ts(5,10): error TS2339: Property 'newProp' does not exist on type 'Object'.
+
+Found 2 errors in 2 files.
+
+Watching for file changes.

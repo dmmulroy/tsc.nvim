@@ -3,6 +3,7 @@ local ConfigManager = require('tsc.config')
 local PluginManager = require('tsc.plugins')
 local ProjectDiscovery = require('tsc.core.discovery')
 local Runner = require('tsc.core.runner')
+local LegacyCommands = require('tsc.compat.commands')
 
 ---@class TSC
 ---@field private _config ConfigManager
@@ -43,8 +44,14 @@ function TSC.setup(opts)
   -- Set up user commands
   self:_setup_commands()
   
+  -- Set up legacy commands for backward compatibility
+  LegacyCommands.setup_legacy_commands(self)
+  
   -- Set up autocommands if needed
   self:_setup_autocommands()
+  
+  -- Set up legacy autocommands
+  LegacyCommands.setup_legacy_autocommands(self)
   
   -- Mark as initialized
   self._initialized = true
