@@ -40,6 +40,23 @@ use('dmmulroy/tsc.nvim')
 
 ```
 
+### Lazy
+
+To install the plugin using lazy.nvim, add the following to your plugin configuration:
+
+```lua
+-- tsc.lua
+return {
+	"dmmulroy/tsc.nvim",
+	config = function()
+		require("tsc").setup({
+            -- Your config here
+		})
+	end,
+}
+
+```
+
 ### Vim-Plug
 
 To install the plugin using vim-plug, add the following to your plugin configuration:
