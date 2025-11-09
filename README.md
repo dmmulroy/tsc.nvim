@@ -153,6 +153,65 @@ require('tsc').setup({
 
 With this configuration, tsc.nvim will typecheck all projects in the monorepo, taking into account project references and incremental builds.
 
+### How do I use tsc.nvim with split tsconfig files (e.g., tsconfig.app.json)?
+
+If your project uses split TypeScript configuration files (common in Vite and modern React projects), you have several options:
+
+**Option 1: Specify the config file explicitly**
+
+```lua
+require('tsc').setup({
+    flags = {
+        noEmit = true,
+        project = "tsconfig.app.json",
+    },
+})
+```
+
+**Option 2: Use project references with `--build` flag**
+
+If your root `tsconfig.json` uses project references (e.g., in Vite projects):
+
+```json
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+```
+
+You need to use the `--build` flag, which must be the first argument. Use string format for flags:
+
+```lua
+require('tsc').setup({
+    flags = "--build --noEmit",
+})
+```
+
+**Option 3: Use a dynamic configuration**
+
+```lua
+local function find_tsconfig()
+    -- Try to find tsconfig.app.json first, then fall back to tsconfig.json
+    local configs = { "tsconfig.app.json", "tsconfig.json" }
+    for _, config in ipairs(configs) do
+        if vim.fn.filereadable(config) == 1 then
+            return config
+        end
+    end
+    return nil
+end
+
+require('tsc').setup({
+    flags = {
+        noEmit = true,
+        project = find_tsconfig(),
+    },
+})
+```
+
 ### Can I use `Trouble` for the quickfix list?
 
 Yes, as long as you have the plugin installed you can set `use_trouble_qflist = true` in the configuration.
