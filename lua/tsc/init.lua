@@ -298,7 +298,12 @@ M.run = function()
     if type(config.flags) == "string" then
       flags = config.flags
     else
-      flags = utils.parse_flags(vim.tbl_extend("force", config.flags, { project = project }))
+      -- Only override project if user hasn't explicitly set it
+      local flag_overrides = {}
+      if config.flags.project == nil then
+        flag_overrides.project = project
+      end
+      flags = utils.parse_flags(vim.tbl_extend("force", config.flags, flag_overrides))
     end
     vim.schedule(function()
       running_processes[project] = {
