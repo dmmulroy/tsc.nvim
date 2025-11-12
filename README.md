@@ -40,6 +40,23 @@ use('dmmulroy/tsc.nvim')
 
 ```
 
+### Lazy
+
+To install the plugin using lazy.nvim, add the following to your plugin configuration:
+
+```lua
+-- tsc.lua
+return {
+	"dmmulroy/tsc.nvim",
+	config = function()
+		require("tsc").setup({
+            -- Your config here
+		})
+	end,
+}
+
+```
+
 ### Vim-Plug
 
 To install the plugin using vim-plug, add the following to your plugin configuration:
@@ -50,11 +67,13 @@ Plug 'dmmulroy/tsc.nvim'
 
 Then run `:PlugInstall` to install the plugin.
 
-### Notify
-
-For an enhanced UI/UX experience, it is recommended to install the [nvim_notify](https://github.com/rcarriga/nvim-notify) plugin as well. This plugin is optional, and the plugin will work without it.
-
 ## Setup
+
+> **Notifications**
+>
+> For an enhanced UI/UX experience, it is recommended to install the [nvim_notify](https://github.com/rcarriga/nvim-notify) plugin as well. This plugin is optional, and the plugin will work without it.
+>
+> For this plugin to work with vim-notify, you will need to ensure that `vim.notify = require("notify")` has been added to your NeoVim configuration
 
 To set up the plugin, add the following line to your `init.vim` or `init.lua` file:
 
