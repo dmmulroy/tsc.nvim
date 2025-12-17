@@ -19,6 +19,7 @@ end
 --- @field run_as_monorepo? boolean - (false) When true the `tsc` process will be started mode for each tsconfig in the current working directory
 --- @field max_tsconfig_files? number - (20) Will not run `tsc` if number of found tsconfig files is greater.
 --- @field bin_path? string - Path to the tsc binary if it is not in the projects node_modules or globally
+--- @field bin_name? string - Name of the binary to use (default: "tsc")
 --- @field enable_progress_notifications? boolean - (true) When false progress notifications will not be shown
 --- @field enable_error_notifications? boolean - (true) When false error notifications will not be shown
 --- @field hide_progress_notifications_from_history? boolean - (true) When true progress notifications will be hidden from history
@@ -34,6 +35,7 @@ local DEFAULT_CONFIG = {
   use_trouble_qflist = false,
   use_diagnostics = false,
   bin_path = nil,
+  bin_name = "tsc",
   enable_progress_notifications = true,
   enable_error_notifications = true,
   run_as_monorepo = false,
@@ -83,7 +85,7 @@ end
 
 M.run = function()
   -- Closed over state
-  local tsc = config.bin_path or utils.find_tsc_bin()
+  local tsc = config.bin_path or utils.find_tsc_bin(config.bin_name)
   local errors = {}
   local files_with_errors = {}
   local notify_record
@@ -93,7 +95,10 @@ M.run = function()
   if not utils.is_executable(tsc) then
     vim.notify(
       format_notification_msg(
-        "tsc was not available or found in your node_modules or $PATH. Please run install and try again."
+        string.format(
+          "%s was not available or found in your node_modules or $PATH. Please run install and try again.",
+          config.bin_name
+        )
       ),
       vim.log.levels.ERROR,
       get_notify_options()
