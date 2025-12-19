@@ -9,14 +9,17 @@ M.is_executable = function(cmd)
   return cmd and vim.fn.executable(cmd) == 1 or false
 end
 
-M.find_tsc_bin = function()
-  local node_modules_tsc_binary = vim.fn.findfile("node_modules/.bin/tsc", ".;")
+--- @param bin_name? string Name of the binary to find (default: "tsc")
+--- @return string
+M.find_tsc_bin = function(bin_name)
+  bin_name = bin_name or "tsc"
+  local node_modules_binary = vim.fn.findfile("node_modules/.bin/" .. bin_name, ".;")
 
-  if node_modules_tsc_binary ~= "" then
-    return node_modules_tsc_binary
+  if node_modules_binary ~= "" then
+    return node_modules_binary
   end
 
-  return "tsc"
+  return bin_name
 end
 
 --- @param run_mono_repo boolean

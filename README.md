@@ -103,7 +103,8 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
   use_diagnostics = false,
   run_as_monorepo = false,
   max_tsconfig_files = 20,
-  bin_path = utils.find_tsc_bin(),
+  bin_path = nil,
+  bin_name = "tsc",
   enable_progress_notifications = true,
   enable_error_notifications = true,
   flags = {
@@ -250,6 +251,28 @@ Yes. As file explorers uses LSP diagnostics, you can use the `use_diagnostics` o
 ```
 use_diagnostics = true
 ```
+
+### Can I use alternative TypeScript compilers like `tsgo`?
+
+Yes! You can use the `bin_name` option to specify an alternative TypeScript compiler binary. This is useful for tools like [tsgo](https://github.com/nicolo-ribaudo/tsgo) which can be significantly faster than the standard `tsc`.
+
+```lua
+require('tsc').setup({
+    bin_name = "tsgo",
+})
+```
+
+The plugin will automatically look for the binary in your project's `node_modules/.bin/` directory first, then fall back to the global PATH.
+
+If you need to specify a full path to the binary instead, you can use the `bin_path` option:
+
+```lua
+require('tsc').setup({
+    bin_path = vim.fn.expand("~/.bun/bin/tsgo"),
+})
+```
+
+Note: When `bin_path` is set, it takes precedence over `bin_name`.
 
 ## Contributing
 
