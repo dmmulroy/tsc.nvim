@@ -132,7 +132,11 @@ M.set_qflist = function(errors, opts)
   local DEFAULT_OPTS = { auto_open = true, auto_close = false, use_trouble = false }
   local final_opts = vim.tbl_extend("force", DEFAULT_OPTS, opts or {})
 
-  vim.fn.setqflist({}, "r", { title = "TSC", items = errors })
+  -- Replace the quickfix list only when the existing list was also created by
+  -- TSC, otherwise create a new entry in the quickfix history.
+  local qf_action = vim.fn.getqflist({ title = 0 }).title == "TSC" and "r" or " "
+
+  vim.fn.setqflist({}, qf_action, { title = "TSC", items = errors })
 
   if #errors > 0 and final_opts.auto_open then
     M.open_qflist(final_opts.use_trouble, final_opts.auto_focus)
