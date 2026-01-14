@@ -367,7 +367,7 @@ function M.setup(opts)
         pattern = "*.{ts,tsx}",
         desc = "Start tsc.nvim in watch mode automatically when opening a TypeScript file",
         callback = function()
-          M.run()
+          vim.schedule(M.run)
         end,
       })
     end
