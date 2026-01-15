@@ -102,6 +102,7 @@ By default, the plugin uses the default `tsc` command with the `--noEmit` flag t
   use_trouble_qflist = false,
   use_diagnostics = false,
   run_as_monorepo = false,
+  monorepo_root_patterns = { ".git" },
   max_tsconfig_files = 20,
   bin_path = nil,
   bin_name = "tsc",

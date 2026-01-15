@@ -17,6 +17,7 @@ end
 --- @field use_trouble_qflist? boolean - (false) When true the quick fix list will be opened in Trouble if it is installed
 --- @field use_diagnostics? boolean - (false) When true the errors will be set as diagnostics
 --- @field run_as_monorepo? boolean - (false) When true the `tsc` process will be started mode for each tsconfig in the current working directory
+--- @field monorepo_root_patterns? string[] - ({".git"}) The file pattern to be used to find the root of the monorepo
 --- @field max_tsconfig_files? number - (20) Will not run `tsc` if number of found tsconfig files is greater.
 --- @field bin_path? string - Path to the tsc binary if it is not in the projects node_modules or globally
 --- @field bin_name? string - Name of the binary to use (default: "tsc")
@@ -39,6 +40,7 @@ local DEFAULT_CONFIG = {
   enable_progress_notifications = true,
   enable_error_notifications = true,
   run_as_monorepo = false,
+  monorepo_root_patterns = { ".git" },
   max_tsconfig_files = 20,
   flags = {
     noEmit = true,
@@ -83,7 +85,11 @@ local function format_notification_msg(msg, spinner_idx)
   return string.format(" %s %s ", config.spinner[spinner_idx], msg)
 end
 
-M.run = function()
+--- @class RunParams
+--- @field force_monorepo_mode boolean
+
+--- @param params RunParams?
+M.run = function(params)
   -- Closed over state
   local tsc = config.bin_path or utils.find_tsc_bin(config.bin_name)
   local errors = {}
@@ -107,7 +113,14 @@ M.run = function()
     return
   end
 
-  local configs_to_run = utils.find_tsconfigs(config.run_as_monorepo)
+  --- @type boolean
+  local run_as_monorepo = (params and params.force_monorepo_mode) or config.run_as_monorepo or false
+
+  -- When running a monorepo check, we need to make sure we run the commands
+  -- from the root of the monorepo, as the cwd may be a subdirectory
+  local monorepo_root_path = vim.fs.root(0, config.monorepo_root_patterns) or "."
+
+  local configs_to_run = utils.find_tsconfigs(run_as_monorepo, monorepo_root_path)
 
   if #configs_to_run > 0 and not config.run_as_monorepo then
     M.stop()
@@ -240,8 +253,10 @@ M.run = function()
     )
   end
 
+  ---@param output string[]
+  ---@param project string
   local function on_stdout(output, project)
-    local result = utils.parse_tsc_output(output, config)
+    local result = utils.parse_tsc_output(output, config, project)
 
     running_processes[project].errors = result.errors
 
@@ -277,6 +292,7 @@ M.run = function()
     end
   end
 
+  --- @param project string
   local opts = function(project)
     return {
       on_stdout = function(_, output)
@@ -286,6 +302,7 @@ M.run = function()
         on_exit()
       end,
       stdout_buffered = true,
+      cwd = vim.fs.dirname(project),
     }
   end
 
@@ -337,6 +354,13 @@ function M.setup(opts)
   vim.api.nvim_create_user_command("TSC", function()
     M.run()
   end, { desc = "Run `tsc` asynchronously and load the results into a qflist", force = true })
+
+  vim.api.nvim_create_user_command("TSCMono", function()
+    M.run({ force_monorepo_mode = true })
+  end, {
+    desc = "Run `tsc` for all the typescript projects in the monorepo",
+    force = true,
+  })
 
   vim.api.nvim_create_user_command("TSCStop", function()
     M.stop()

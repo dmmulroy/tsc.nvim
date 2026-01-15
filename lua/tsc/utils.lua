@@ -16,15 +16,16 @@ M.find_tsc_bin = function(bin_name)
   local node_modules_binary = vim.fn.findfile("node_modules/.bin/" .. bin_name, ".;")
 
   if node_modules_binary ~= "" then
-    return node_modules_binary
+    return vim.fs.abspath(node_modules_binary)
   end
 
   return bin_name
 end
 
 --- @param run_mono_repo boolean
---- @return table<string>
-M.find_tsconfigs = function(run_mono_repo)
+--- @param monorepo_root_path string
+--- @return string[]
+M.find_tsconfigs = function(run_mono_repo, monorepo_root_path)
   if not run_mono_repo then
     return M.find_nearest_tsconfig()
   end
@@ -33,9 +34,15 @@ M.find_tsconfigs = function(run_mono_repo)
 
   local found_configs = nil
   if M.is_executable("rg") then
-    found_configs = vim.fn.system("rg -g '!node_modules' --files | rg 'tsconfig.*.json'")
+    found_configs = vim.trim(
+      vim.system({ "rg", "--files", "-g", "!node_modules", "-g", "tsconfig.json", monorepo_root_path }):wait().stdout
+    )
   else
-    found_configs = vim.fn.system('find . -not -path "*/node_modules/*" -name "tsconfig.*.json" -type f')
+    found_configs = vim.trim(
+      vim
+        .system({ "find", monorepo_root_path, "-not", "-path", "*/node_modules/*", "-name", "tsconfig.*.json", "-type", "f" })
+        :wait().stdout
+    )
   end
 
   if found_configs == nil then
@@ -43,7 +50,7 @@ M.find_tsconfigs = function(run_mono_repo)
   end
 
   for s in found_configs:gmatch("[^\r\n]+") do
-    table.insert(tsconfigs, s)
+    table.insert(tsconfigs, vim.fs.abspath(s))
   end
 
   assert(tsconfigs)
@@ -51,10 +58,10 @@ M.find_tsconfigs = function(run_mono_repo)
 end
 
 M.find_nearest_tsconfig = function()
-  local tsconfig = vim.fn.findfile("tsconfig.json", ".;")
+  local tsconfig_root = vim.fs.root(0, "tsconfig.json")
 
-  if tsconfig ~= "" then
-    return { tsconfig }
+  if tsconfig_root then
+    return { vim.fs.joinpath(vim.fs.abspath(tsconfig_root), "tsconfig.json") }
   end
 
   return {}
@@ -96,13 +103,18 @@ M.parse_flags = function(flags)
   return parsed_flags
 end
 
-M.parse_tsc_output = function(output, config)
+---@param output string[]
+---@param config Opts
+---@param project string
+M.parse_tsc_output = function(output, config, project)
   local errors = {}
   local files = {}
 
   if output == nil then
     return { errors = errors, files = files }
   end
+
+  local project_root = vim.fs.dirname(project)
 
   for _, line in ipairs(output) do
     local filename, lineno, colno, message = line:match("^(.+)%((%d+),(%d+)%)%s*:%s*(.+)$")
@@ -112,7 +124,7 @@ M.parse_tsc_output = function(output, config)
         text = better_messages.translate(message)
       end
       table.insert(errors, {
-        filename = filename,
+        filename = vim.fs.joinpath(project_root, filename),
         lnum = tonumber(lineno),
         col = tonumber(colno),
         text = text,
