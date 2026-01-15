@@ -182,4 +182,25 @@ M.close_qflist = function(use_trouble)
   end
 end
 
+--- @param diagnostic lsp.Diagnostic
+local translate_diagnostic = function(diagnostic)
+  diagnostic.message = better_messages.translate(("TS" .. diagnostic.code .. ": " .. diagnostic.message))
+
+  return diagnostic
+end
+
+--- Translate diagnostics as they get published on each document.
+---
+--- This helper is meant to be consumed as a custom handler for the 'textDocument/publishDiagnostics' event.
+--- @param err lsp.ResponseError?
+--- @param res lsp.PublishDiagnosticsParams
+--- @param ctx lsp.HandlerContext
+M.text_document_published_diagnostics_handler = function(err, res, ctx, ...)
+  res.diagnostics = vim.tbl_map(better_messages.translate_lsp_diagnostic, res.diagnostics)
+
+  --- typescript-tools passes a fourth undocumented param, we're forwarding it to match the behavior
+  ---@diagnostic disable-next-line: redundant-parameter
+  return vim.lsp.diagnostic.on_publish_diagnostics(err, res, ctx, ...)
+end
+
 return M

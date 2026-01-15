@@ -27,6 +27,34 @@ https://user-images.githubusercontent.com/2755722/233818163-bd2c2dda-88fc-41ea-a
 
 https://user-images.githubusercontent.com/2755722/233843746-ee116863-bef5-4e26-ba0a-afb906a2f111.mov
 
+### typescript-tools.nvim integration
+
+You can translate the Typescript errors as they show up in your buffer by passing the following handler to [typescript-tools.nvim]:
+
+```lua
+return {
+    {
+        "dmmulroy/tsc.nvim",
+        opts = { }
+    },
+    {
+        "pmizio/typescript-tools.nvim",
+        dependencies = {"nvim-lua/plenary.nvim", "dmmulroy/tsc.nvim"},
+        opts = {
+            settings = {
+                handlers = {
+                    ["textDocument/publishDiagnostics"] = function (...)
+                        local tsc_utils = require('tsc.utils')
+                        return tsc_utils.text_document_published_diagnostics_handler(...)
+                    end
+                }
+            }
+        }
+}
+```
+
+<img alt="Screenshot 2026-01-15 at 10 05 02" src="https://github.com/user-attachments/assets/e26b66eb-e974-4dbd-b114-ae58ecad759f" />
+
 ## Installation
 
 To install the plugin, use your preferred Neovim plugin manager.
@@ -281,3 +309,5 @@ Feel free to open issues or submit pull requests if you encounter any bugs or ha
 ## License
 
 This plugin is released under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+[typescript-tools.nvim]: https://github.com/pmizio/typescript-tools.nvim

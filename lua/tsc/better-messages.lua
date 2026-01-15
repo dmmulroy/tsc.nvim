@@ -106,5 +106,26 @@ M.translate = function(message)
   return "TS" .. error_num .. ": " .. better_error
 end
 
+--- @param diagnostic lsp.Diagnostic
+--- @return lsp.Diagnostic
+M.translate_lsp_diagnostic = function(diagnostic)
+  local improved_text_file = get_error_markdown_file(diagnostic.code)
+  if improved_text_file == nil then
+    return diagnostic
+  end
+
+  local parsed = parse_md(improved_text_file)
+
+  local params = get_params(parsed["original"])
+
+  if #params == 0 and parsed.body then
+    diagnostic.message = parsed.body
+    return diagnostic
+  end
+
+  diagnostic.message = better_error_message(diagnostic.message, parsed["original"], parsed["better"])
+  return diagnostic
+end
+
 -- Returning the module M.
 return M
