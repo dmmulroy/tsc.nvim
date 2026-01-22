@@ -258,7 +258,7 @@ M.run = function()
     end
 
     for _, value in pairs(output) do
-      if string.find(value, "Watching for file changes") then
+      if string.find(value, "Watching for file changes") or string.find(value, "build finished in") then
         on_stdout(total_output, project)
         total_output = {}
         create_output()
